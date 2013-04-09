@@ -209,7 +209,7 @@ class IsingLattice {
             }
         };
         
-        void addNodeToClusterIfSameStartingSpin(
+        void addNodeToClusterAndFlipSpinIfSameStartingSpin(
                 std::vector<coordinate> &stack,
                 int startingNodeSpin,
                 double prob,
@@ -220,6 +220,7 @@ class IsingLattice {
             if (getSpin(x,y,z) == startingNodeSpin) {
                 if (real_d_(mt_) < prob) {
                     stack.push_back(coordinate(x,y,z));
+                    flipSpin(x, y, z);
                 }
             }
         }
@@ -247,38 +248,34 @@ class IsingLattice {
                 // take last node coordinates from stack
                 coordinate currentCoordinates = stack.back();
                 stack.pop_back();
-                
-                // flip current node's spin
-                flipSpin(currentCoordinates.x, currentCoordinates.y, currentCoordinates.z);
-                
+
                 // check all neighbours of node stack[i] with same spin state,
                   // add them to stack with probability p
-                getSpin(x,y,(z-1+latticeLength_)%latticeLength_);
                     
                 // x+1
-                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
                         (currentCoordinates.x+1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
 
                 // x-1
-                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
                         (currentCoordinates.x+latticeLength_-1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
 
                 
                 // y+1
-                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, (currentCoordinates.y+1)%latticeLength_, currentCoordinates.z);
 
                 // y-1
-                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, (currentCoordinates.y+latticeLength_-1)%latticeLength_, currentCoordinates.z);
 
                 
                 // z+1
-                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+1)%latticeLength_);
 
                 // z-1
-                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+latticeLength_-1)%latticeLength_);
             }
         }
@@ -376,15 +373,14 @@ void wolff1() {
 
     std::vector<double> energy(numMeasurementValues, 0);
     
-    #pragma omp parallel for
+//    #pragma omp parallel for
 //    for (int j=0;j<80;++j) {
     for (int j=0;j<8;++j) {
-        std::cerr << "   measuring for temperature: " << 4.0+j*0.01 << std::endl << "   ";
+        std::cerr << "    measuring for temperature: " << 4.0+j*0.01 << std::endl << "   ";
 
         IsingLattice myLattice(4.0+j*0.01, systemSize);
         // numMeasurementValues measurement values will be averaged
         for (unsigned k=0; k<numMeasurementValues; ++k) {
-            if (k/numMeasurementValues > 0.2)
             // do numWolffSteps wolff steps
             for (long l=0; l<numWolffSteps; ++l) {
                 myLattice.doWolffStep();
