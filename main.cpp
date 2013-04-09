@@ -209,19 +209,17 @@ class IsingLattice {
             }
         };
         
-        void addNodeToClusterIfNotCheckedAndSameStartingSpin(
-                std::vector<int> &nodeChecked,
-                std::vector<coordinate> &cluster,
+        void addNodeToClusterIfSameStartingSpin(
+                std::vector<coordinate> &stack,
                 int startingNodeSpin,
                 double prob,
                 unsigned int x,
                 unsigned int y,
                 unsigned int z)
         {
-            if (!nodeChecked[x+y*latticeLength_+z*latticeLength_*latticeLength_] && getSpin(x,y,z) == startingNodeSpin) {
+            if (getSpin(x,y,z) == startingNodeSpin) {
                 if (real_d_(mt_) < prob) {
-                    cluster.push_back(coordinate(x,y,z));
-                    nodeChecked[x+y*latticeLength_+z*latticeLength_*latticeLength_] = 1;
+                    stack.push_back(coordinate(x,y,z));
                 }
             }
         }
@@ -230,115 +228,58 @@ class IsingLattice {
             int startingNodeSpin;
             double prob;
             unsigned int x,y,z;
-            std::vector<coordinate> cluster;
-            std::vector<int> nodeChecked(pow(latticeLength_, 3), 0);
+            std::vector<coordinate> stack;
 
             // probability to connect nodes
             prob = 1-exp(-2*beta_*J_);
             
             // choose random node
             x=int_i_x_(mt_); y=int_i_y_(mt_); z=int_i_z_(mt_);
+            
             // save its spin
             startingNodeSpin = getSpin(x,y,z);
+            
             // add current node coordinates to stack at position 0
-            cluster.push_back(coordinate(x,y,z));
-            // i = 0
-            unsigned int i = 0;
-            // while stack[i] not empty
-            while (i < cluster.size()) {
-                coordinate currentCoordinates = cluster[i];
+            stack.push_back(coordinate(x,y,z));
+            
+            // while stack not empty
+            while (!stack.empty()) {
+                // take last node coordinates from stack
+                coordinate currentCoordinates = stack.back();
+                stack.pop_back();
+                
+                // flip current node's spin
+                flipSpin(currentCoordinates.x, currentCoordinates.y, currentCoordinates.z);
+                
                 // check all neighbours of node stack[i] with same spin state,
                   // add them to stack with probability p
                 getSpin(x,y,(z-1+latticeLength_)%latticeLength_);
                     
                 // x+1
-//                addToStackIfCool(stack, prob, x, y, z);
-                addNodeToClusterIfNotCheckedAndSameStartingSpin(nodeChecked, cluster, startingNodeSpin, prob,
+                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
                         (currentCoordinates.x+1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
-//                if (getSpin((currentCoordinates.x+1)%latticeLength_,
-//                        currentCoordinates.y,
-//                        currentCoordinates.z) == startingNodeSpin && !nodeChecked[
-//                        x
-//                        +y*latticeLength_
-//                        +z*latticeLength_*latticeLength_]) {
-//                    if (real_d_(mt_) < prob) {
-//                        cluster.push_back(coordinate((currentCoordinates.x+1)%latticeLength_,
-//                                currentCoordinates.y,
-//                                currentCoordinates.z));
-//                        nodeChecked[x+y*latticeLength_+z*latticeLength_*latticeLength_] = 1;
-//                    }
-//                }
+
                 // x-1
-                addNodeToClusterIfNotCheckedAndSameStartingSpin(nodeChecked, cluster, startingNodeSpin, prob,
+                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
                         (currentCoordinates.x+latticeLength_-1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
-//                if (getSpin((currentCoordinates.x+latticeLength_-1)%latticeLength_,
-//                        currentCoordinates.y,
-//                        currentCoordinates.z) == startingNodeSpin) {
-//                    if (real_d_(mt_) < prob) {
-//                        cluster.push_back(coordinate((currentCoordinates.x+latticeLength_-1)%latticeLength_,
-//                                currentCoordinates.y,
-//                                currentCoordinates.z));
-//                    }
-//                }
+
                 
                 // y+1
-                addNodeToClusterIfNotCheckedAndSameStartingSpin(nodeChecked, cluster, startingNodeSpin, prob,
+                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, (currentCoordinates.y+1)%latticeLength_, currentCoordinates.z);
-//                if (getSpin(currentCoordinates.x,
-//                        (currentCoordinates.y+1)%latticeLength_,
-//                        currentCoordinates.z) == startingNodeSpin) {
-//                    if (real_d_(mt_) < prob) {
-//                        cluster.push_back(coordinate(currentCoordinates.x,
-//                                (currentCoordinates.y+1)%latticeLength_,
-//                                currentCoordinates.z));
-//                    }
-//                }
+
                 // y-1
-                addNodeToClusterIfNotCheckedAndSameStartingSpin(nodeChecked, cluster, startingNodeSpin, prob,
+                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, (currentCoordinates.y+latticeLength_-1)%latticeLength_, currentCoordinates.z);
-//                if (getSpin(currentCoordinates.x,
-//                        (currentCoordinates.y+latticeLength_-1)%latticeLength_,
-//                        currentCoordinates.z) == startingNodeSpin) {
-//                    if (real_d_(mt_) < prob) {
-//                        cluster.push_back(coordinate(currentCoordinates.x,
-//                                (currentCoordinates.y+latticeLength_-1)%latticeLength_,
-//                                currentCoordinates.z));
-//                    }
-//                }
+
                 
                 // z+1
-                addNodeToClusterIfNotCheckedAndSameStartingSpin(nodeChecked, cluster, startingNodeSpin, prob,
+                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+1)%latticeLength_);
-//                if (getSpin(currentCoordinates.x,
-//                        currentCoordinates.y,
-//                        (currentCoordinates.z+1)%latticeLength_) == startingNodeSpin) {
-//                    if (real_d_(mt_) < prob) {
-//                        cluster.push_back(coordinate(currentCoordinates.x,
-//                                currentCoordinates.y,
-//                                (currentCoordinates.z+1)%latticeLength_));
-//                    }
-//                }
+
                 // z-1
-                addNodeToClusterIfNotCheckedAndSameStartingSpin(nodeChecked, cluster, startingNodeSpin, prob,
+                addNodeToClusterIfSameStartingSpin(stack, startingNodeSpin, prob,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+latticeLength_-1)%latticeLength_);
-//                if (getSpin(currentCoordinates.x,
-//                        currentCoordinates.y,
-//                        (currentCoordinates.z+latticeLength_-1)%latticeLength_) == startingNodeSpin) {
-//                    if (real_d_(mt_) < prob) {
-//                        cluster.push_back(coordinate(currentCoordinates.x,
-//                                currentCoordinates.y,
-//                                (currentCoordinates.z+latticeLength_-1)%latticeLength_));
-//                    }
-//                }
-                
-                // ++i
-                ++i;
-            }
-            
-            // flip all nodes's spin in stack
-            for (i=0;i<cluster.size();++i) {
-                coordinate currentCoordinates = cluster[i];
-                flipSpin(currentCoordinates.x, currentCoordinates.y, currentCoordinates.z);
             }
         }
 };
@@ -451,6 +392,7 @@ void wolff1() {
             // measure energy
             energy[k] = myLattice.computeEnergyOfSystem();
         }
+        
         // calculate mean and standard deviation (http://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos)
         double sum = std::accumulate(energy.begin(), energy.end(), 0.0);
         double mean = sum / energy.size();
@@ -459,6 +401,7 @@ void wolff1() {
                        std::bind2nd(std::minus<double>(), mean));
         double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
         double stdev = std::sqrt(sq_sum / energy.size());
+        
         // average energy and print result
         std::cout << 4.0+j*0.01 << " " << mean << " " << stdev << std::endl;
     }
