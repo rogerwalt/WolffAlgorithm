@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>    // std::transform
+#include <stack>
 
 
 class IsingLattice {
@@ -210,7 +211,7 @@ class IsingLattice {
         };
         
         void addNodeToClusterAndFlipSpinIfSameStartingSpin(
-                std::vector<coordinate> &stack,
+                std::stack<coordinate> &stack,
                 int startingNodeSpin,
                 double prob,
                 unsigned int x,
@@ -219,7 +220,7 @@ class IsingLattice {
         {
             if (getSpin(x,y,z) == startingNodeSpin) {
                 if (real_d_(mt_) < prob) {
-                    stack.push_back(coordinate(x,y,z));
+                    stack.push(coordinate(x,y,z));
                     flipSpin(x, y, z);
                 }
             }
@@ -229,7 +230,7 @@ class IsingLattice {
             int startingNodeSpin;
             double prob;
             unsigned int x,y,z;
-            std::vector<coordinate> stack;
+            std::stack<coordinate> stack;
 
             // probability to connect nodes
             prob = 1-exp(-2*beta_*J_);
@@ -241,13 +242,13 @@ class IsingLattice {
             startingNodeSpin = getSpin(x,y,z);
             
             // add current node coordinates to stack at position 0
-            stack.push_back(coordinate(x,y,z));
+            stack.push(coordinate(x,y,z));
             
             // while stack not empty
             while (!stack.empty()) {
                 // take last node coordinates from stack
-                coordinate currentCoordinates = stack.back();
-                stack.pop_back();
+                coordinate currentCoordinates = stack.top();
+                stack.pop();
 
                 // check all neighbours of node stack[i] with same spin state,
                   // add them to stack with probability p
@@ -360,8 +361,8 @@ void finiteSizeScaling() {
 // generates data to a E(T) curve using the wolff algorithm
 void wolff1() {
     unsigned int systemSize = 10;
-    unsigned int numWolffSteps = 10;
-    unsigned int numMeasurementValues = 1e6;
+    unsigned int numWolffSteps = 3*pow(systemSize, 3);  // 3 sweeps
+    unsigned int numMeasurementValues = 5e3;
     
 //    unsigned int numWolffSteps = 1000;
 //    unsigned int numMeasurementValues = 2000;
@@ -373,9 +374,9 @@ void wolff1() {
 
     std::vector<double> energy(numMeasurementValues, 0);
     
-//    #pragma omp parallel for
-//    for (int j=0;j<80;++j) {
-    for (int j=0;j<8;++j) {
+    #pragma omp parallel for
+    for (int j=0;j<80;++j) {
+//    for (int j=0;j<8;++j) {
         std::cerr << "    measuring for temperature: " << 4.0+j*0.01 << std::endl << "   ";
 
         IsingLattice myLattice(4.0+j*0.01, systemSize);
