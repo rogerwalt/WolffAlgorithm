@@ -378,36 +378,39 @@ void wolff1() {
     
     const double startingTemperature = 1;
 
-    std::vector<double> energy(numMeasurementValues, 0);
-    
-    #pragma omp parallel for
-    for (int j=0;j<800;++j) {
-        std::cerr << "    measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
+    #pragma omp parallel
+    {
+        std::vector<double> energy(numMeasurementValues, 0);
+        
+        #pragma omp for
+        for (int j=0;j<800;++j) {
+            std::cerr << "    measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
 
-        IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
-        // numMeasurementValues measurement values will be averaged
-        for (unsigned k=0; k<numMeasurementValues; ++k) {
-            double t = 0;
-            do {
-                unsigned int clusterSize = myLattice.doWolffStep();
-                t += clusterSize / (pow(systemSize, 3) * 1.0);
-            } while (t < 1);
-            
-            // measure energy
-            energy[k] = myLattice.computeNormalizedEnergyOfSystem();
+            IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
+            // numMeasurementValues measurement values will be averaged
+            for (unsigned k=0; k<numMeasurementValues; ++k) {
+                double t = 0;
+                do {
+                    unsigned int clusterSize = myLattice.doWolffStep();
+                    t += clusterSize / (pow(systemSize, 3) * 1.0);
+                } while (t < 1);
+
+                // measure energy
+                energy[k] = myLattice.computeNormalizedEnergyOfSystem();
+            }
+
+            // calculate mean and standard deviation (http://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos)
+            double sum = std::accumulate(energy.begin(), energy.end(), 0.0);
+            double mean = sum / energy.size();
+            std::vector<double> diff(energy.size());
+            std::transform(energy.begin(), energy.end(), diff.begin(),
+                           std::bind2nd(std::minus<double>(), mean));
+            double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+            double stdev = std::sqrt(sq_sum / energy.size());
+
+            // average energy and print result
+            std::cout << startingTemperature+j*0.01 << " " << mean << " " << stdev << " " << std::endl;
         }
-        
-        // calculate mean and standard deviation (http://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos)
-        double sum = std::accumulate(energy.begin(), energy.end(), 0.0);
-        double mean = sum / energy.size();
-        std::vector<double> diff(energy.size());
-        std::transform(energy.begin(), energy.end(), diff.begin(),
-                       std::bind2nd(std::minus<double>(), mean));
-        double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-        double stdev = std::sqrt(sq_sum / energy.size());
-        
-        // average energy and print result
-        std::cout << 4.0+j*0.01 << " " << mean << " " << stdev << " " << std::endl;
     }
 }
 
