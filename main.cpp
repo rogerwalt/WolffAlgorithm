@@ -373,46 +373,28 @@ void finiteSizeScaling() {
 // generates data to a E(T) curve using the wolff algorithm
 void wolff1() {
     unsigned int systemSize = 10;
-//    unsigned int numWolffSteps = 3*pow(systemSize, 3);  // 3 sweeps
     unsigned int numWolffSteps = 3000;
     unsigned int numMeasurementValues = 5e3;
     
-//    unsigned int numWolffSteps = 1000;
-//    unsigned int numMeasurementValues = 2000;
-//    stderr: 200
-
-//    unsigned int numWolffSteps = 10;
-//    unsigned int numMeasurementValues = 1e6;
-//    stderr: 280 --> shit
+    const double startingTemperature = 1;
 
     std::vector<double> energy(numMeasurementValues, 0);
     
-//    #pragma omp parallel for
-    for (int j=0;j<80;++j) {
-//    for (int j=0;j<8;++j) {
-        std::cerr << "    measuring for temperature: " << 4.0+j*0.01 << std::endl << "   ";
+    #pragma omp parallel for
+    for (int j=0;j<800;++j) {
+        std::cerr << "    measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
 
-        IsingLattice myLattice(4.0+j*0.01, systemSize);
+        IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
         // numMeasurementValues measurement values will be averaged
         for (unsigned k=0; k<numMeasurementValues; ++k) {
-            // do numWolffSteps wolff steps
-//            for (long l=0; l<numWolffSteps; ++l) {
-////                time evoved by deltaT = size of cluster / L^3
-////                if t increased by 1 since last measurement => measure
-//                unsigned int clusterSize = myLattice.doWolffStep();
-//            }
-            
             double t = 0;
             do {
                 unsigned int clusterSize = myLattice.doWolffStep();
                 t += clusterSize / (pow(systemSize, 3) * 1.0);
-//                std::cerr << t << std::endl;
             } while (t < 1);
             
             // measure energy
             energy[k] = myLattice.computeNormalizedEnergyOfSystem();
-            // measure magnetization
-//            std::cerr << myLattice.computeMagnetization() << std::endl;
         }
         
         // calculate mean and standard deviation (http://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos)
