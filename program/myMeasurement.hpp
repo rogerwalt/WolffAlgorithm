@@ -111,9 +111,9 @@ template <typename T> std::ostream& operator<< (std::ostream& out, const myMeasu
     out << "\t\t\t\t'mean':     " << m.mean() << "," << std::endl;
     out << "\t\t\t\t'stderr':   [";
     for (int i=0;i<N-1;i++) {
-        out << m.mean(i) << ",";
+        out << m.error(i) << ",";
     }
-    out << m.mean(N-1) << "]," << std::endl;
+    out << m.error(N-1) << "]," << std::endl;
     
     out << "\t\t\t\t'autocorr': [";
     for (int i=0;i<N-1;i++) {
