@@ -22,6 +22,10 @@ class IsingLattice {
         const unsigned int latticeLength_;                      // length in all directions
         int spinSum_;                                           // used to track and calculate magnetization
         double energySum_;                                      // same for energy
+        
+        unsigned int steps_ = 0;                                // these two are used to calculate the acceptance rate for single spin flips
+        unsigned int failed_ = 0;
+        
         std::vector<int> latticeNode_;                          // 3-dim lattice
         std::mt19937 mt_;                                       // random generator
         std::uniform_real_distribution<double> real_d_;         // random number distributions
@@ -76,6 +80,25 @@ class IsingLattice {
         }
 
     public:
+        struct coordinate {
+            unsigned int x,y,z;
+            coordinate(unsigned int x, unsigned int y, unsigned int z) {
+                this->x = x; this->y = y; this->z = z;
+            }
+            // operator used by set.count()
+            bool operator<(const coordinate &other) const {
+                if (x<other.x) {
+                    return true;
+                } else if (x==other.x && y<other.y) {
+                    return true;
+                } else if (y==other.y && x==other.x && z<other.z) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+        
         // constructor, initialize lattice_ with spin up
         IsingLattice(const double T, const unsigned int length)
         : T_(T)
@@ -127,17 +150,28 @@ class IsingLattice {
             return energy/2.0;
         }
 
-        // sum up the eneriges of all nodes
-        double computeEnergyOfSystem() {
+        double computeEnergy() {
             return energySum_;
         }
         
-        double computeNormalizedEnergyOfSystem() {
-            return computeEnergyOfSystem() / (latticeNode_.size() * 1.0);
+        double computeNormalizedEnergy() {
+            return computeEnergy() / (latticeNode_.size() * 1.0);
         }
 
         double computeMagnetization() {
-            return 1/pow(latticeLength_, 3) * spinSum_;
+            return spinSum_;
+        }
+        
+        double computeNormalizedMagnetization() {
+            return computeMagnetization() / (latticeNode_.size() * 1.0);
+        }
+        
+        double computeAcceptanceRate() {
+            return 1 - failed_ / (1.0*steps_);
+        }
+        
+        void resetAcceptanceRate() {
+            failed_ = 0; steps_ = 0;
         }
 
         // do timestep (single flip metropolis)
@@ -170,13 +204,15 @@ class IsingLattice {
                 // if the random double is lower than the probability, flip it back
                 if (!(real_d_(mt_) < prob)) {
                     flipSpin(x,y,z);
+                    ++failed_;
                 }
             }
+            ++steps_;
         }
 
         // do a time sweep (one sweep is N single flips, N = length³)
         void timeSweep() {
-            for (unsigned int i=0; i<pow(latticeLength_, 3); ++i) {
+            for (unsigned int i=0; i<latticeNode_.size(); ++i) {
                 timeStep();
             }
         }
@@ -187,72 +223,14 @@ class IsingLattice {
                 timeSweep();
             }
         }
-
-        // chi: magnetic susceptibility, cap: heat capacity
-        // does sweeps and calculate mean values when its done
-        void doSweeps(const unsigned int sweeps, double& meanEnergy, double& meanMagnetization, double& chi, double& cap) {
-            std::vector<double> magnetization(sweeps, 0);
-            std::vector<double> energy(sweeps, 0);
-
-            for (unsigned int i=0; i<sweeps; ++i) {
-                magnetization[i] = computeMagnetization();
-                energy[i] = computeEnergyOfSystem();
-
-                // let the system evolve for 3 sweeps
-                time3Sweep();
-            }
-            // for chi we have to compute the mean of the (magnetization²) and the (mean of the magnetization)²
-            chi = beta_ * pow(latticeLength_, 3) * (computeSquaredMean(magnetization) - computeMeanSquared(magnetization));
-            // for cap we have to compute the mean of the (energy)² and the (mean of the energy)²
-            cap = pow(beta_, 2) / pow(latticeLength_, 3) * (computeSquaredMean(energy) - computeMeanSquared(energy));
-
-            meanEnergy = computeMean(energy);
-            meanMagnetization = computeMean(magnetization);
-            return;
-        }
-
-        double computeMean(std::vector<double>& nums) {
-            double sum = 0;
-            for (unsigned i=0; i<nums.size(); ++i) {
-                sum += nums[i];
-            }
-            return sum/nums.size();
-        }
-
-        double computeSquaredMean(std::vector<double>& nums) {
-            double sum = 0;
-            for (unsigned i=0; i<nums.size(); ++i) {
-                sum += pow(nums[i], 2);
-            }
-            return sum/nums.size();
-        }
-
-        double computeMeanSquared(std::vector<double>& nums) {
-            double sum = 0;
-            for (unsigned i=0; i<nums.size(); ++i) {
-                sum += nums[i];
-            }
-            return pow(sum/nums.size(), 2);
-        }
         
-        struct coordinate {
-            unsigned int x,y,z;
-            coordinate(unsigned int x, unsigned int y, unsigned int z) {
-                this->x = x; this->y = y; this->z = z;
+        // does 5k*(number of nodes) single spin flip sweeps
+        void do5kSweeps() {
+            unsigned int numberOfSweeps = 5000 * latticeNode_.size();
+            for (unsigned int i=0; i<numberOfSweeps; ++i) {
+                timeSweep();
             }
-            // operator used by set.count()
-            bool operator<(const coordinate &other) const {
-                if (x<other.x) {
-                    return true;
-                } else if (x==other.x && y<other.y) {
-                    return true;
-                } else if (y==other.y && x==other.x && z<other.z) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        };
+        }
         
         void addNodeToClusterAndFlipSpinIfProbable(
                 std::stack<coordinate> &stack,
@@ -331,13 +309,15 @@ class IsingLattice {
         }
 };
 
-// generates data to a E(T) curve using the wolff algorithm
-void plot1() {
+void measure() {
     unsigned int systemSize = 10;
-    unsigned int numWolffSteps = 3000;
     unsigned int numMeasurementValues = 5e3;
     
     const double startingTemperature = 1;
+    const double temperatureStep = 0.1;
+    const double endTemperature = 5;
+    
+    const unsigned int numberOfTemperatureLoops = (endTemperature - startingTemperature) / temperatureStep + 1;
     
     // open file
     std::ofstream myfile;
@@ -347,33 +327,54 @@ void plot1() {
     myfile << "data = [" << std::endl;
 
     #pragma omp parallel
-    {        
-        myMeasurement<double> magnetizationMeasurement;
-        myMeasurement<double> energyMeasurement;
-        myMeasurement<double> clusterSizeMeasurement;
+    {
+        // initialize measurement containers
+            // wolff
+            myMeasurement<double> wolffMagnetizationMeasurement;
+            myMeasurement<double> wolffEnergyMeasurement;
+            myMeasurement<double> wolffClusterSizeMeasurement;
+            // single spinflip
+            myMeasurement<double> singleMagnetizationMeasurement;
+            myMeasurement<double> singleEnergyMeasurement;
+            myMeasurement<double> singleAcceptanceRateMeasurement;
         
         #pragma omp for
-        for (int j=0;j<801;++j) {
+        for (int j=0;j<numberOfTemperatureLoops;++j) {   // temperature loop
             #pragma omp critical
-            { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+j*0.01 << std::endl; }
+            { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+j*temperatureStep << ", systemSize: " << systemSize << std::endl; }
 
-            IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
+            // initialize the systems
+                IsingLattice wolffLattice(startingTemperature+j*temperatureStep, systemSize);
+                IsingLattice singleLattice(startingTemperature+j*temperatureStep, systemSize);
             
-            // thermalize system (relax to equilibrium)
-            for (unsigned k=0; k<3*pow(systemSize, 3); ++k) {
-                myLattice.doWolffStep();
-            }
+            // thermalize systems (relax to equilibrium)
+                // wolff
+                for (unsigned k=0; k<3*pow(systemSize, 3); ++k) {
+                    wolffLattice.doWolffStep();
+                }
+                // single spinflip
+                singleLattice.time3Sweep();
+                singleLattice.resetAcceptanceRate();
+                
+            #pragma omp critical
+            { std::cerr << "[" << omp_get_thread_num() << "] thermalization complete" << std::endl; }
             
             // evolve in time and measure!
             for (unsigned k=0; k<numMeasurementValues; ++k) {
                 // measure energy
-                energyMeasurement.add_plain(myLattice.computeNormalizedEnergyOfSystem());
+                wolffEnergyMeasurement.add_plain(wolffLattice.computeNormalizedEnergy());
+                singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
                 
                 // measure magnetization
-                magnetizationMeasurement.add_plain(myLattice.computeMagnetization());
+                wolffMagnetizationMeasurement.add_plain(wolffLattice.computeNormalizedMagnetization());
+                singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
                 
-                // measure cluster size and do wolff step
-                clusterSizeMeasurement.add_plain(myLattice.doWolffStep());
+                // do wolff step and measure cluster size
+                wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
+                
+                // do single steps (5*number of nodes) and measure acceptance rate
+                singleLattice.timeStep();
+                singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
             }
 
             // output measurement data
@@ -382,31 +383,54 @@ void plot1() {
             {
                 std::cerr << "[" << omp_get_thread_num() << "] writing output" << std::endl;
                 
-                myfile  << "\t(" << std::endl
-                        << "\t\t" << startingTemperature+j*0.01 << "," << std::endl
-                        << "\t\t{" << std::endl
-                // magnetization
-                        << "\t\t\t" << "'magnetization': {" << std::endl
-                        << magnetizationMeasurement
-                        << "\t\t\t}," << std::endl
-                // energy
-                        << "\t\t\t" << "'energy': {" << std::endl
-                        << energyMeasurement
-                        << "\t\t\t}," << std::endl
-                // cluster size
-                        << "\t\t\t" << "'clusterSize': {" << std::endl
-                        << clusterSizeMeasurement
-                        << "\t\t\t}," << std::endl
+                myfile  << "\t{" << std::endl
+                        << "\t\t" << "'temperature': " << startingTemperature+j*temperatureStep << "," << std::endl
+                        << "\t\t" << "'systemSize': " << systemSize << "," << std::endl
+                        << "\t\t" << "'results': {" << std::endl
+                // wolff
+                        << "\t\t\t" << "'wolff': {" << std::endl
+                    // magnetization
+                            << "\t\t\t\t" << "'magnetization': {" << std::endl
+                            << wolffMagnetizationMeasurement
+                            << "\t\t\t\t}," << std::endl
+                    // energy
+                            << "\t\t\t\t" << "'energy': {" << std::endl
+                            << wolffEnergyMeasurement
+                            << "\t\t\t\t}," << std::endl
+                    // cluster size
+                            << "\t\t\t\t" << "'clusterSize': {" << std::endl
+                            << wolffClusterSizeMeasurement
+                            << "\t\t\t\t}," << std::endl
+                        << "\t\t\t" << "}," << std::endl
+                // single spin flip
+                        << "\t\t\t" << "'single': {" << std::endl
+                    // magnetization
+                            << "\t\t\t\t" << "'magnetization': {" << std::endl
+                            << singleMagnetizationMeasurement
+                            << "\t\t\t\t}," << std::endl
+                    // energy
+                            << "\t\t\t\t" << "'energy': {" << std::endl
+                            << singleEnergyMeasurement
+                            << "\t\t\t\t}," << std::endl
+                    // acceptanceRate
+                            << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
+                            << singleAcceptanceRateMeasurement
+                            << "\t\t\t\t}," << std::endl
+                        << "\t\t\t" << "}" << std::endl
                 // end
                         << "\t\t}" << std::endl
-                        << "\t)," << std::endl;
+                        << "\t}," << std::endl;
             }
             
             // clear the measurements
-            magnetizationMeasurement.clear();
-            energyMeasurement.clear();
-            clusterSizeMeasurement.clear();
-        } // omp for
+            wolffMagnetizationMeasurement.clear();
+            wolffEnergyMeasurement.clear();
+            wolffClusterSizeMeasurement.clear();
+            
+            singleMagnetizationMeasurement.clear();
+            singleEnergyMeasurement.clear();
+            singleAcceptanceRateMeasurement.clear();
+        } // temperature loop
     } // omp parallel
     
     // finish file
@@ -432,12 +456,12 @@ void plot2() {
         // measure metropolis
         metropolisLattice.timeStep();
         
-        metropolisEnergy = metropolisLattice.computeNormalizedEnergyOfSystem();
+        metropolisEnergy = metropolisLattice.computeNormalizedEnergy();
         
         // measure wolff
         wolffLattice.doWolffStep();
 
-        wolffEnergy = wolffLattice.computeNormalizedEnergyOfSystem();
+        wolffEnergy = wolffLattice.computeNormalizedEnergy();
         
         std::cout << i << " " << metropolisEnergy << " " << wolffEnergy << std::endl;
     }
@@ -450,8 +474,7 @@ void plot2() {
 // add '-fopenmp' to additional compiler options in netbeans
 int main()
 {
-    plot1();
-//    plot2();
+    measure();
 
     return 0;
 }

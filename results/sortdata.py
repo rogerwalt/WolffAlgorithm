@@ -2,8 +2,7 @@ import data
 import matplotlib.pyplot as plt
 
 # sort data
-data.data.sort(key=lambda tup: tup[0])
-
+d.data.sort(key=lambda tup: (tup['temperature'],tup['systemSize']))
 
 # plot cluster size
 pltdata = [(data.data[x][0], data.data[x][1]['clusterSize']['mean'], data.data[x][1]['clusterSize']['stderr'][5]) for x in range(801)]
