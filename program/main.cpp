@@ -10,6 +10,11 @@
 
 #include "myMeasurement.hpp"
 
+#ifdef _OPENMP
+   #include <omp.h>
+#else
+   #define omp_get_thread_num() 0
+#endif
 
 class IsingLattice {
     private:
@@ -372,7 +377,7 @@ void measure() {
                 // do wolff step and measure cluster size
                 wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
                 
-                // do single steps (5*number of nodes) and measure acceptance rate
+                // do single step and measure acceptance rate
                 singleLattice.timeStep();
                 singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
             }
