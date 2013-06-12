@@ -372,7 +372,7 @@ void measure() {
                 
                 // measure magnetization
                 wolffMagnetizationMeasurement.add_plain(wolffLattice.computeNormalizedMagnetization());
-                singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
+                singleMagnetizationMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
                 
                 // do wolff step and measure cluster size
                 wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
