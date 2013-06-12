@@ -347,16 +347,15 @@ void plot1() {
     myfile << "data = [" << std::endl;
 
     #pragma omp parallel
-    {
-        std::vector<double> energy(numMeasurementValues, 0);
-        std::vector<unsigned int> clusterSize(numMeasurementValues, 0);
-        std::vector<double> magnetization(numMeasurementValues, 0);
-        
+    {        
         myMeasurement<double> magnetizationMeasurement;
+        myMeasurement<double> energyMeasurement;
+        myMeasurement<double> clusterSizeMeasurement;
         
         #pragma omp for
-        for (int j=0;j<8;++j) {
-            std::cerr << "   measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
+        for (int j=0;j<801;++j) {
+            #pragma omp critical
+            { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+j*0.01 << std::endl; }
 
             IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
             
@@ -365,43 +364,48 @@ void plot1() {
                 myLattice.doWolffStep();
             }
             
-            // numMeasurementValues measurement values will be averaged
+            // evolve in time and measure!
             for (unsigned k=0; k<numMeasurementValues; ++k) {
-//                double t = 0;
-//                do {
-//                  unsigned int clusterSize = myLattice.doWolffStep();
-//                    t += clusterSize / (pow(systemSize, 3) * 1.0);
-//                } while (t < 1);
-
                 // measure energy
-                energy[k] = myLattice.computeNormalizedEnergyOfSystem();
-                
-                // measure cluster size
-                clusterSize[k] = myLattice.doWolffStep();
+                energyMeasurement.add_plain(myLattice.computeNormalizedEnergyOfSystem());
                 
                 // measure magnetization
                 magnetizationMeasurement.add_plain(myLattice.computeMagnetization());
+                
+                // measure cluster size and do wolff step
+                clusterSizeMeasurement.add_plain(myLattice.doWolffStep());
             }
 
             // output measurement data
             // write data
             #pragma omp critical
             {
+                std::cerr << "[" << omp_get_thread_num() << "] writing output" << std::endl;
+                
                 myfile  << "\t(" << std::endl
                         << "\t\t" << startingTemperature+j*0.01 << "," << std::endl
                         << "\t\t{" << std::endl
+                // magnetization
                         << "\t\t\t" << "'magnetization': {" << std::endl
                         << magnetizationMeasurement
-                        << "\t\t\t}" << std::endl
+                        << "\t\t\t}," << std::endl
+                // energy
+                        << "\t\t\t" << "'energy': {" << std::endl
+                        << energyMeasurement
+                        << "\t\t\t}," << std::endl
+                // cluster size
+                        << "\t\t\t" << "'clusterSize': {" << std::endl
+                        << clusterSizeMeasurement
+                        << "\t\t\t}," << std::endl
+                // end
                         << "\t\t}" << std::endl
                         << "\t)," << std::endl;
             }
             
-            // average energy and print result
-//            std::cout << startingTemperature+j*0.01 << " " << mean << " " << stdev << " ";
-            
             // clear the measurements
             magnetizationMeasurement.clear();
+            energyMeasurement.clear();
+            clusterSizeMeasurement.clear();
         } // omp for
     } // omp parallel
     
