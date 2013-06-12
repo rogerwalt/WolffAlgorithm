@@ -108,14 +108,14 @@ template <typename T> std::ostream& operator<< (std::ostream& out, const myMeasu
 	int N = m.bins()-7; // the last seven bins have less than 100 measurements, so we drop them
 	N = N>0 ? N : 0;
     
-    out << "\t\t\t'mean':     " << m.mean() << "," << std::endl;
-    out << "\t\t\t'stderr':   [";
+    out << "\t\t\t\t'mean':     " << m.mean() << "," << std::endl;
+    out << "\t\t\t\t'stderr':   [";
     for (int i=0;i<N-1;i++) {
         out << m.mean(i) << ",";
     }
     out << m.mean(N-1) << "]," << std::endl;
     
-    out << "\t\t\t'autocorr': [";
+    out << "\t\t\t\t'autocorr': [";
     for (int i=0;i<N-1;i++) {
         out << m.time(i) << ",";
     }

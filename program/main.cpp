@@ -344,7 +344,7 @@ void plot1() {
     myfile.open("data.py");
     
     // prepare file
-    myfile << "data = {" << std::endl;
+    myfile << "data = [" << std::endl;
 
     #pragma omp parallel
     {
@@ -387,10 +387,14 @@ void plot1() {
             // write data
             #pragma omp critical
             {
-                myfile  << "\t" << startingTemperature+j*0.01 << ": {" << std::endl
-                        << "\t\t" << "'magnetization': {" << std::endl
+                myfile  << "\t(" << std::endl
+                        << "\t\t" << startingTemperature+j*0.01 << "," << std::endl
+                        << "\t\t{" << std::endl
+                        << "\t\t\t" << "'magnetization': {" << std::endl
                         << magnetizationMeasurement
-                        << "\t\t}" << std::endl;
+                        << "\t\t\t}" << std::endl
+                        << "\t\t}" << std::endl
+                        << "\t)," << std::endl;
             }
             
             // average energy and print result
@@ -402,7 +406,7 @@ void plot1() {
     } // omp parallel
     
     // finish file
-    myfile << "}" << std::endl;
+    myfile << "]" << std::endl;
     
     // close file
     myfile.close();
