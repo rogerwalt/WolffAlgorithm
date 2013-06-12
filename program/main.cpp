@@ -319,7 +319,7 @@ void measure() {
     unsigned int numMeasurementValues = 5e3;
     
     const double startingTemperature = 1;
-    const double temperatureStep = 0.1;
+    const double temperatureStep = 0.05;
     const double endTemperature = 5;
     
     const unsigned int numberOfTemperatureLoops = (endTemperature - startingTemperature) / temperatureStep + 1;
