@@ -6,6 +6,9 @@
 #include <iostream>
 #include <algorithm>    // std::transform
 #include <stack>
+#include <set>
+
+#include "myMeasurement.hpp"
 
 
 class IsingLattice {
@@ -17,6 +20,8 @@ class IsingLattice {
         const double k_ = 1;
         const double beta_;                                     // beta_ = 1/(k_*T_)
         const unsigned int latticeLength_;                      // length in all directions
+        int spinSum_;                                           // used to track and calculate magnetization
+        double energySum_;                                      // same for energy
         std::vector<int> latticeNode_;                          // 3-dim lattice
         std::mt19937 mt_;                                       // random generator
         std::uniform_real_distribution<double> real_d_;         // random number distributions
@@ -27,7 +32,47 @@ class IsingLattice {
         // flips the spin of the given node
         void flipSpin(unsigned int x, unsigned int y, unsigned int z) {
             assert(x<latticeLength_); assert(y<latticeLength_); assert(z<latticeLength_);
+            
+            // update energySum
+            energySum_ -= 2*computeEnergyOfNode(x,y,z);
+            
+            // update spinSum
+            if (latticeNode_[x+y*latticeLength_+z*latticeLength_*latticeLength_] > 0) {
+                spinSum_ -= 2;
+            } else {
+                spinSum_ += 2;
+            }
+            
+            // flip
             latticeNode_[x+y*latticeLength_+z*latticeLength_*latticeLength_] *= -1;
+        }
+        
+        int loopComputeSpinSum() {
+            double sum = 0;
+            // loop over all nodes
+            for (unsigned int x=0; x<latticeLength_; ++x) {
+                for (unsigned int y=0; y<latticeLength_; ++y) {
+                    for (unsigned int z=0; z<latticeLength_; ++z) {
+                        sum += getSpin(x,y,z);
+                    }
+                }
+            }
+            return sum;
+        }
+        
+        double loopComputeEnergySum() {
+            double energy = 0;
+
+            // loop over all nodes
+            for (unsigned int x=0; x<latticeLength_; ++x) {
+                for (unsigned int y=0; y<latticeLength_; ++y) {
+                    for (unsigned int z=0; z<latticeLength_; ++z) {
+                        energy += computeEnergyOfNode(x,y,z);
+                    }
+                }
+            }
+
+            return energy;
         }
 
     public:
@@ -41,7 +86,10 @@ class IsingLattice {
         , int_i_x_(0, length-1)
         , int_i_y_(0, length-1)
         , int_i_z_(0, length-1)
-        { }
+        {
+            spinSum_ = loopComputeSpinSum();
+            energySum_ = loopComputeEnergySum();
+        }
 
         // returns the spin of the given node
         int getSpin(unsigned int x, unsigned int y, unsigned int z) {
@@ -81,18 +129,7 @@ class IsingLattice {
 
         // sum up the eneriges of all nodes
         double computeEnergyOfSystem() {
-            double energy = 0;
-
-            // loop over all nodes
-            for (unsigned int x=0; x<latticeLength_; ++x) {
-                for (unsigned int y=0; y<latticeLength_; ++y) {
-                    for (unsigned int z=0; z<latticeLength_; ++z) {
-                        energy += computeEnergyOfNode(x,y,z);
-                    }
-                }
-            }
-
-            return energy;
+            return energySum_;
         }
         
         double computeNormalizedEnergyOfSystem() {
@@ -100,16 +137,7 @@ class IsingLattice {
         }
 
         double computeMagnetization() {
-            double sum = 0;
-            // loop over all nodes
-            for (unsigned int x=0; x<latticeLength_; ++x) {
-                for (unsigned int y=0; y<latticeLength_; ++y) {
-                    for (unsigned int z=0; z<latticeLength_; ++z) {
-                        sum += getSpin(x,y,z);
-                    }
-                }
-            }
-            return 1/pow(latticeLength_, 3) * sum;
+            return 1/pow(latticeLength_, 3) * spinSum_;
         }
 
         // do timestep (single flip metropolis)
@@ -212,30 +240,43 @@ class IsingLattice {
             coordinate(unsigned int x, unsigned int y, unsigned int z) {
                 this->x = x; this->y = y; this->z = z;
             }
+            // operator used by set.count()
+            bool operator<(const coordinate &other) const {
+                if (x<other.x) {
+                    return true;
+                } else if (x==other.x && y<other.y) {
+                    return true;
+                } else if (y==other.y && x==other.x && z<other.z) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         };
         
-        void addNodeToClusterAndFlipSpinIfSameStartingSpin(
+        void addNodeToClusterAndFlipSpinIfProbable(
                 std::stack<coordinate> &stack,
-                int startingNodeSpin,
+                std::set<coordinate> &cluster,
                 double prob,
                 unsigned int x,
                 unsigned int y,
                 unsigned int z)
         {
-            if (getSpin(x,y,z) == startingNodeSpin) {
-                if (real_d_(mt_) < prob) {
-                    stack.push(coordinate(x,y,z));
-                    flipSpin(x,y,z);
-                }
+            // if node already in cluster, dont check again
+            if (cluster.count(coordinate(x,y,z))) return;
+            
+            if (real_d_(mt_) < prob) {
+                stack.push(coordinate(x,y,z));
+                cluster.insert(coordinate(x,y,z));
+                flipSpin(x,y,z);
             }
         }
         
         unsigned int doWolffStep() {
-            int startingNodeSpin;
             double prob;
             unsigned int x,y,z;
             std::stack<coordinate> stack;
-            unsigned int clusterSize = 0;
+            std::set<coordinate> cluster;
 
             // probability to connect nodes
             prob = 1-exp(-2*beta_*J_);
@@ -243,11 +284,10 @@ class IsingLattice {
             // choose random node
             x=int_i_x_(mt_); y=int_i_y_(mt_); z=int_i_z_(mt_);
             
-            // save its spin
-            startingNodeSpin = getSpin(x,y,z);
-            
             // add current node coordinates to stack at position 0
             stack.push(coordinate(x,y,z));
+            
+            cluster.insert(coordinate(x,y,z));
             
             flipSpin(x,y,z);
             
@@ -256,122 +296,43 @@ class IsingLattice {
                 // take last node coordinates from stack
                 coordinate currentCoordinates = stack.top();
                 stack.pop();
-                clusterSize++;
                 
-//                flipSpin(currentCoordinates.x, currentCoordinates.y, currentCoordinates.z);
-
                 // check all neighbours of node stack[i] with same spin state,
                   // add them to stack with probability p
                     
                 // x+1
-                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
                         (currentCoordinates.x+1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
 
                 // x-1
-                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
                         (currentCoordinates.x+latticeLength_-1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
 
                 
                 // y+1
-                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
                         currentCoordinates.x, (currentCoordinates.y+1)%latticeLength_, currentCoordinates.z);
 
                 // y-1
-                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
                         currentCoordinates.x, (currentCoordinates.y+latticeLength_-1)%latticeLength_, currentCoordinates.z);
 
                 
                 // z+1
-                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+1)%latticeLength_);
 
                 // z-1
-                addNodeToClusterAndFlipSpinIfSameStartingSpin(stack, startingNodeSpin, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+latticeLength_-1)%latticeLength_);
             }
             
-            return clusterSize;
+            return cluster.size();
         }
 };
 
-void plot1() {
-    IsingLattice myLattice(6, 10);
-    for (unsigned int i=0; i<127; ++i) {
-        std::cout << i << " " << myLattice.computeEnergyOfSystem() << " " << myLattice.computeMagnetization() << std::endl;
-        myLattice.time3Sweep();
-    }
-}
-
-void plot2() {
-    double meanEnergy, meanMagnetization, chi, cap;
-    double temperature = 3;
-
-    for (int i=0;i<201;++i) {
-        meanEnergy = meanMagnetization = chi = cap = 0;
-        IsingLattice myLattice(temperature, 10);
-
-        // let the system relax into equilibirum for 3 sweeps
-        myLattice.time3Sweep();
-
-        // do 2k*3 sweeps and calculate the values
-        myLattice.doSweeps(2000*3, meanEnergy, meanMagnetization, chi, cap);
-        std::cout << temperature << " " << meanEnergy << " " << meanMagnetization << " " << chi << " " << cap << std::endl;
-        temperature += 0.01;
-    }
-}
-
-// finite size scaling: measure ChiMax = chi(Tc) for different system sizes to get an estimate for gamma/nu (lecture slide 72)
-// system sizes 3 - 20, delta 1
-void measureChiMax() {
-    const unsigned int startSize = 3;
-    const unsigned int endSize = 20;
-
-    double meanEnergy, meanMagnetization, chi, cap;
-
-    const double Tc = 4.51;
-    for (unsigned int i=startSize; i<=endSize; ++i) {
-        std::cerr << "measuring for size " << i << std::endl;
-        IsingLattice myLattice(Tc, i);
-        // let the system relax into equilibirum for 3 sweeps
-        myLattice.time3Sweep();
-
-        // do 300*3 sweeps and calculate the values
-        myLattice.doSweeps(300*3, meanEnergy, meanMagnetization, chi, cap);
-
-        std::cout << i << " " << chi << std::endl;
-    }
-}
-
-// measure magnetic susceptibility for different system sizes and temperatures
-// temperature range 4.0 - 4.8 K, delta 0.01
-// system sizes 3 - 20, delta 1
-void finiteSizeScaling() {
-    const unsigned int startSize = 3;
-    const unsigned int endSize = 20;
-
-    double meanEnergy, meanMagnetization, chi, cap;
-
-    for (unsigned int i=startSize; i<=endSize; ++i) {
-        std::cerr << std::endl << "measuring for size: " << i << std::endl << std::endl;
-
-        #pragma omp parallel for
-        for (int j=0;j<80;++j) {
-            std::cerr << "   measuring for temperature: " << 4.0+j*0.01 << std::endl << "   ";
-
-            IsingLattice myLattice(4.0+j*0.01, i);
-            // let the system relax into equilibirum for 3 sweeps
-            myLattice.time3Sweep();
-
-            // do 5000*3 sweeps and calculate the values
-            myLattice.doSweeps(5000*3, meanEnergy, meanMagnetization, chi, cap);
-
-            std::cout << i << " " << 4.0+j*0.01 << " " << chi << std::endl;
-        }
-    }
-}
-
 // generates data to a E(T) curve using the wolff algorithm
-void wolff1() {
+void plot1() {
     unsigned int systemSize = 10;
     unsigned int numWolffSteps = 3000;
     unsigned int numMeasurementValues = 5e3;
@@ -381,22 +342,38 @@ void wolff1() {
     #pragma omp parallel
     {
         std::vector<double> energy(numMeasurementValues, 0);
+        std::vector<unsigned int> clusterSize(numMeasurementValues, 0);
+        std::vector<double> magnetization(numMeasurementValues, 0);
+        
+        myMeasurement<double> magnetizationMeasurement;
         
         #pragma omp for
         for (int j=0;j<800;++j) {
             std::cerr << "    measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
 
             IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
+            
+            // thermalize system (relax to equilibrium)
+            for (unsigned k=0; k<3*pow(systemSize, 3); ++k) {
+                myLattice.doWolffStep();
+            }
+            
             // numMeasurementValues measurement values will be averaged
             for (unsigned k=0; k<numMeasurementValues; ++k) {
-                double t = 0;
-                do {
-                    unsigned int clusterSize = myLattice.doWolffStep();
-                    t += clusterSize / (pow(systemSize, 3) * 1.0);
-                } while (t < 1);
+//                double t = 0;
+//                do {
+//                  unsigned int clusterSize = myLattice.doWolffStep();
+//                    t += clusterSize / (pow(systemSize, 3) * 1.0);
+//                } while (t < 1);
 
                 // measure energy
                 energy[k] = myLattice.computeNormalizedEnergyOfSystem();
+                
+                // measure cluster size
+                clusterSize[k] = myLattice.doWolffStep();
+                
+                // measure magnetization
+                magnetizationMeasurement.add_plain(myLattice.computeMagnetization());
             }
 
             // calculate mean and standard deviation (http://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos)
@@ -407,25 +384,49 @@ void wolff1() {
                            std::bind2nd(std::minus<double>(), mean));
             double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
             double stdev = std::sqrt(sq_sum / energy.size());
-
+            
             // average energy and print result
-            std::cout << startingTemperature+j*0.01 << " " << mean << " " << stdev << " " << std::endl;
+            std::cout << startingTemperature+j*0.01 << " " << mean << " " << stdev << " ";
+            
+            // calculate mean cluster size
+            sum = std::accumulate(clusterSize.begin(), clusterSize.end(), 0.0);
+            mean = sum / clusterSize.size();
+
+            std::cout << mean << " ";
+            
+            // calculate mean magnetization
+            std::cout << magnetizationMeasurement;
+            
+            // clear the measurements
+            magnetizationMeasurement.clear();
         }
     }
 }
 
-void wolff2() {
-    IsingLattice myLattice(1, 10);
+// shows the difference of the critical slowing down of the metropolis algorithm versus the wolff algorithm
+void plot2() {
+    const double criticalTemperature = 4.51;
+    const unsigned int systemSize = 10;
+    const unsigned int numMeasurementValues = 10e3;
     
-    for (unsigned int i=0; i<10000; ++i) {
-        double t = 0;
-        do {
-            unsigned int clusterSize = myLattice.doWolffStep();
-            t += clusterSize / (pow(10, 3) * 1.0);
-            std::cerr << t << std::endl;
-        } while (t < 1);
+    IsingLattice metropolisLattice(criticalTemperature, systemSize);
+    IsingLattice wolffLattice(criticalTemperature, systemSize);
+    
+    double metropolisEnergy;
+    double wolffEnergy;
+    
+    for (unsigned int i=0; i<numMeasurementValues; ++i) {
+        // measure metropolis
+        metropolisLattice.timeStep();
         
-        std::cout << i << " " << myLattice.computeMagnetization() << " " << myLattice.computeNormalizedEnergyOfSystem() << std::endl;
+        metropolisEnergy = metropolisLattice.computeNormalizedEnergyOfSystem();
+        
+        // measure wolff
+        wolffLattice.doWolffStep();
+
+        wolffEnergy = wolffLattice.computeNormalizedEnergyOfSystem();
+        
+        std::cout << i << " " << metropolisEnergy << " " << wolffEnergy << std::endl;
     }
 }
 
@@ -436,15 +437,8 @@ void wolff2() {
 // add '-fopenmp' to additional compiler options in netbeans
 int main()
 {
-
-//    plot1();
+    plot1();
 //    plot2();
-//    measureChiMax();
-//    finiteSizeScaling();
-    wolff1();
-    
-//    IsingLattice myLattice(1, 50);
-//    std::cout << myLattice.computeMagnetization()<< " " << myLattice.computeNormalizedEnergyOfSystem() << std::endl;
 
     return 0;
 }
