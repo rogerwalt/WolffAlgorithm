@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=wolff
+PROJECTNAME=program
 
 # Active Configuration
 DEFAULTCONF=Debug

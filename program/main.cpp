@@ -4,9 +4,9 @@
 #include <random>
 #include <cmath>
 #include <iostream>
-#include <algorithm>    // std::transform
 #include <stack>
 #include <set>
+#include <fstream>      // file operations
 
 #include "myMeasurement.hpp"
 
@@ -338,6 +338,13 @@ void plot1() {
     unsigned int numMeasurementValues = 5e3;
     
     const double startingTemperature = 1;
+    
+    // open file
+    std::ofstream myfile;
+    myfile.open("data.py");
+    
+    // prepare file
+    myfile << "data = {" << std::endl;
 
     #pragma omp parallel
     {
@@ -348,8 +355,8 @@ void plot1() {
         myMeasurement<double> magnetizationMeasurement;
         
         #pragma omp for
-        for (int j=0;j<800;++j) {
-            std::cerr << "    measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
+        for (int j=0;j<8;++j) {
+            std::cerr << "   measuring for temperature: " << startingTemperature+j*0.01 << std::endl << "   ";
 
             IsingLattice myLattice(startingTemperature+j*0.01, systemSize);
             
@@ -376,31 +383,29 @@ void plot1() {
                 magnetizationMeasurement.add_plain(myLattice.computeMagnetization());
             }
 
-            // calculate mean and standard deviation (http://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos)
-            double sum = std::accumulate(energy.begin(), energy.end(), 0.0);
-            double mean = sum / energy.size();
-            std::vector<double> diff(energy.size());
-            std::transform(energy.begin(), energy.end(), diff.begin(),
-                           std::bind2nd(std::minus<double>(), mean));
-            double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-            double stdev = std::sqrt(sq_sum / energy.size());
+            // output measurement data
+            // write data
+            #pragma omp critical
+            {
+                myfile  << "\t" << startingTemperature+j*0.01 << ": {" << std::endl
+                        << "\t\t" << "'magnetization': {" << std::endl
+                        << magnetizationMeasurement
+                        << "\t\t}" << std::endl;
+            }
             
             // average energy and print result
-            std::cout << startingTemperature+j*0.01 << " " << mean << " " << stdev << " ";
-            
-            // calculate mean cluster size
-            sum = std::accumulate(clusterSize.begin(), clusterSize.end(), 0.0);
-            mean = sum / clusterSize.size();
-
-            std::cout << mean << " ";
-            
-            // calculate mean magnetization
-            std::cout << magnetizationMeasurement;
+//            std::cout << startingTemperature+j*0.01 << " " << mean << " " << stdev << " ";
             
             // clear the measurements
             magnetizationMeasurement.clear();
-        }
-    }
+        } // omp for
+    } // omp parallel
+    
+    // finish file
+    myfile << "}" << std::endl;
+    
+    // close file
+    myfile.close();
 }
 
 // shows the difference of the critical slowing down of the metropolis algorithm versus the wolff algorithm

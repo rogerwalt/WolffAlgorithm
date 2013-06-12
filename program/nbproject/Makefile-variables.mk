@@ -9,19 +9,19 @@ CND_DISTDIR=dist
 # Debug configuration
 CND_PLATFORM_Debug=GNU-Linux-x86
 CND_ARTIFACT_DIR_Debug=dist/Debug/GNU-Linux-x86
-CND_ARTIFACT_NAME_Debug=wolff
-CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux-x86/wolff
+CND_ARTIFACT_NAME_Debug=program
+CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux-x86/program
 CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux-x86/package
-CND_PACKAGE_NAME_Debug=wolff.tar
-CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/wolff.tar
+CND_PACKAGE_NAME_Debug=program.tar
+CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/program.tar
 # Release configuration
 CND_PLATFORM_Release=GNU-Linux-x86
 CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux-x86
-CND_ARTIFACT_NAME_Release=wolff
-CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux-x86/wolff
+CND_ARTIFACT_NAME_Release=program
+CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux-x86/program
 CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux-x86/package
-CND_PACKAGE_NAME_Release=wolff.tar
-CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux-x86/package/wolff.tar
+CND_PACKAGE_NAME_Release=program.tar
+CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux-x86/package/program.tar
 #
 # include compiler specific variables
 #

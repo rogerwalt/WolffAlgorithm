@@ -1,2 +1,4 @@
 build/*
 dist/*
+/program/build/
+/program/dist/
