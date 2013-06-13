@@ -183,6 +183,26 @@ class IsingLattice {
             failed_ = 0; steps_ = 0;
         }
         
+        double computeSpatialSpinCorrelationForDistance(unsigned int distance) {
+            // the spatial correlation between to spins is the average of the products of all spin pairs with the given distance in the system
+            double correlation = 0;
+            for (unsigned int x=0; x<latticeLength_; ++x) {
+                for (unsigned int y=0; y<latticeLength_; ++y) {
+                    for (unsigned int z=0; z<latticeLength_; ++z) {
+                        correlation += getSpin(x,y,z) * getSpin(x + distance,y,z);
+                        correlation += getSpin(x,y,z) * getSpin(x - distance,y,z);
+                        correlation += getSpin(x,y,z) * getSpin(x,y + distance,z);
+                        correlation += getSpin(x,y,z) * getSpin(x,y - distance,z);
+                        correlation += getSpin(x,y,z) * getSpin(x,y,z + distance);
+                        correlation += getSpin(x,y,z) * getSpin(x,y,z - distance);
+                        correlation /= 6.0;
+                    }
+                }
+            }
+            
+            return correlation / (latticeNode_.size() * 1.0);
+        }
+        
         /*######################################*
          * Single spinflip metropolis functions *
          *######################################*/
