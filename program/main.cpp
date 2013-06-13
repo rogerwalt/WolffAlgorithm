@@ -119,6 +119,10 @@ class IsingLattice {
             energySum_ = loopComputeEnergySum();
         }
 
+        /*################*
+         * System metrics *
+         *################*/
+        
         // returns the spin of the given node
         int getSpin(unsigned int x, unsigned int y, unsigned int z) {
             assert(x<latticeLength_); assert(y<latticeLength_); assert(z<latticeLength_);
@@ -178,6 +182,10 @@ class IsingLattice {
         void resetAcceptanceRate() {
             failed_ = 0; steps_ = 0;
         }
+        
+        /*######################################*
+         * Single spinflip metropolis functions *
+         *######################################*/
 
         // do timestep (single flip metropolis)
         void timeStep() {
@@ -236,6 +244,10 @@ class IsingLattice {
                 timeSweep();
             }
         }
+        
+        /*#################*
+         * Wolff functions *
+         *#################*/
         
         void addNodeToClusterAndFlipSpinIfProbable(
                 std::stack<coordinate> &stack,
