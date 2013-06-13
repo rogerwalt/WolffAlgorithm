@@ -381,18 +381,19 @@ void measure() {
             myMeasurement<double> singleAcceptanceRateMeasurement;
         
         #pragma omp for
-        for (int j=0;j<numberOfTemperatureLoops;++j) { // temperature loop
-            for (int k=0;k<numberOfSystemSizeLoops;++k) { // system size loop
+        for (int i=0;i<numberOfTemperatureLoops;++i) { // temperature loop
+//            #pragma omp for
+            for (int j=0;j<numberOfSystemSizeLoops;++j) { // system size loop
                 #pragma omp critical
-                { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+j*temperatureStep << ", systemSize: " << startingSystemSize+k*systemSizeStep << std::endl; }
+                { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+i*temperatureStep << ", systemSize: " << startingSystemSize+j*systemSizeStep << std::endl; }
 
                 // initialize the systems
-                    IsingLattice wolffLattice(startingTemperature+j*temperatureStep, startingSystemSize+k*systemSizeStep);
-                    IsingLattice singleLattice(startingTemperature+j*temperatureStep, startingSystemSize+k*systemSizeStep);
+                    IsingLattice wolffLattice(startingTemperature+i*temperatureStep, startingSystemSize+j*systemSizeStep);
+                    IsingLattice singleLattice(startingTemperature+i*temperatureStep, startingSystemSize+j*systemSizeStep);
 
                 // thermalize systems (relax to equilibrium)
                     // wolff
-                    for (unsigned k=0; k<3*pow(startingSystemSize+k*systemSizeStep, 3); ++k) {
+                    for (unsigned k=0; k<3*pow(startingSystemSize+j*systemSizeStep, 3); ++k) {
                         wolffLattice.doWolffStep();
                     }
                     // single spinflip
@@ -427,8 +428,8 @@ void measure() {
                     std::cerr << "[" << omp_get_thread_num() << "] writing output" << std::endl;
 
                     myfile  << "\t{" << std::endl
-                            << "\t\t" << "'temperature': " << startingTemperature+j*temperatureStep << "," << std::endl
-                            << "\t\t" << "'systemSize': " << startingSystemSize+k*systemSizeStep << "," << std::endl
+                            << "\t\t" << "'temperature': " << startingTemperature+i*temperatureStep << "," << std::endl
+                            << "\t\t" << "'systemSize': " << startingSystemSize+j*systemSizeStep << "," << std::endl
                             << "\t\t" << "'results': {" << std::endl
                     // wolff
                             << "\t\t\t" << "'wolff': {" << std::endl
