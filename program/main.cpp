@@ -354,9 +354,9 @@ void measure() {
     const double temperatureStep = 0.05;
     const double endTemperature = 5;
     
-    const double startingSystemSize = 10;
+    const double startingSystemSize = 5;
     const double systemSizeStep = 5;
-    const double endSystemSize = 100;
+    const double endSystemSize = 15;
     
     const unsigned int numberOfTemperatureLoops = (endTemperature - startingTemperature) / temperatureStep + 1;
     const unsigned int numberOfSystemSizeLoops = (endSystemSize - startingSystemSize) / systemSizeStep + 1;
