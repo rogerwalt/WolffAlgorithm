@@ -322,7 +322,12 @@ void measure() {
     const double temperatureStep = 0.05;
     const double endTemperature = 5;
     
+    const double startingSystemSize = 10;
+    const double systemSizeStep = 5;
+    const double endSystemSize = 100;
+    
     const unsigned int numberOfTemperatureLoops = (endTemperature - startingTemperature) / temperatureStep + 1;
+    const unsigned int numberOfSystemSizeLoops = (endSystemSize - startingSystemSize) / systemSizeStep + 1;
     
     // open file
     std::ofstream myfile;
@@ -332,7 +337,7 @@ void measure() {
     myfile << "data = [" << std::endl;
 
     #pragma omp parallel
-    {
+    { // omp parallel
         // initialize measurement containers
             // wolff
             myMeasurement<double> wolffMagnetizationMeasurement;
@@ -344,97 +349,99 @@ void measure() {
             myMeasurement<double> singleAcceptanceRateMeasurement;
         
         #pragma omp for
-        for (int j=0;j<numberOfTemperatureLoops;++j) {   // temperature loop
-            #pragma omp critical
-            { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+j*temperatureStep << ", systemSize: " << systemSize << std::endl; }
+        for (int j=0;j<numberOfTemperatureLoops;++j) { // temperature loop
+            for (int k=0;k<numberOfSystemSizeLoops;++k) { // system size loop
+                #pragma omp critical
+                { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+j*temperatureStep << ", systemSize: " << startingSystemSize+k*systemSizeStep << std::endl; }
 
-            // initialize the systems
-                IsingLattice wolffLattice(startingTemperature+j*temperatureStep, systemSize);
-                IsingLattice singleLattice(startingTemperature+j*temperatureStep, systemSize);
-            
-            // thermalize systems (relax to equilibrium)
-                // wolff
-                for (unsigned k=0; k<3*pow(systemSize, 3); ++k) {
-                    wolffLattice.doWolffStep();
+                // initialize the systems
+                    IsingLattice wolffLattice(startingTemperature+j*temperatureStep, startingSystemSize+k*systemSizeStep);
+                    IsingLattice singleLattice(startingTemperature+j*temperatureStep, startingSystemSize+k*systemSizeStep);
+
+                // thermalize systems (relax to equilibrium)
+                    // wolff
+                    for (unsigned k=0; k<3*pow(startingSystemSize+k*systemSizeStep, 3); ++k) {
+                        wolffLattice.doWolffStep();
+                    }
+                    // single spinflip
+                    singleLattice.time3Sweep();
+                    singleLattice.resetAcceptanceRate();
+
+                #pragma omp critical
+                { std::cerr << "[" << omp_get_thread_num() << "] thermalization complete" << std::endl; }
+
+                // evolve in time and measure!
+                for (unsigned k=0; k<numMeasurementValues; ++k) {
+                    // measure energy
+                    wolffEnergyMeasurement.add_plain(wolffLattice.computeNormalizedEnergy());
+                    singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
+
+                    // measure magnetization
+                    wolffMagnetizationMeasurement.add_plain(wolffLattice.computeNormalizedMagnetization());
+                    singleMagnetizationMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
+
+                    // do wolff step and measure cluster size
+                    wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
+
+                    // do single step and measure acceptance rate
+                    singleLattice.timeStep();
+                    singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
                 }
-                // single spinflip
-                singleLattice.time3Sweep();
-                singleLattice.resetAcceptanceRate();
-                
-            #pragma omp critical
-            { std::cerr << "[" << omp_get_thread_num() << "] thermalization complete" << std::endl; }
-            
-            // evolve in time and measure!
-            for (unsigned k=0; k<numMeasurementValues; ++k) {
-                // measure energy
-                wolffEnergyMeasurement.add_plain(wolffLattice.computeNormalizedEnergy());
-                singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
-                
-                // measure magnetization
-                wolffMagnetizationMeasurement.add_plain(wolffLattice.computeNormalizedMagnetization());
-                singleMagnetizationMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
-                
-                // do wolff step and measure cluster size
-                wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
-                
-                // do single step and measure acceptance rate
-                singleLattice.timeStep();
-                singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
-            }
 
-            // output measurement data
-            // write data
-            #pragma omp critical
-            {
-                std::cerr << "[" << omp_get_thread_num() << "] writing output" << std::endl;
-                
-                myfile  << "\t{" << std::endl
-                        << "\t\t" << "'temperature': " << startingTemperature+j*temperatureStep << "," << std::endl
-                        << "\t\t" << "'systemSize': " << systemSize << "," << std::endl
-                        << "\t\t" << "'results': {" << std::endl
-                // wolff
-                        << "\t\t\t" << "'wolff': {" << std::endl
-                    // magnetization
-                            << "\t\t\t\t" << "'magnetization': {" << std::endl
-                            << wolffMagnetizationMeasurement
-                            << "\t\t\t\t}," << std::endl
-                    // energy
-                            << "\t\t\t\t" << "'energy': {" << std::endl
-                            << wolffEnergyMeasurement
-                            << "\t\t\t\t}," << std::endl
-                    // cluster size
-                            << "\t\t\t\t" << "'clusterSize': {" << std::endl
-                            << wolffClusterSizeMeasurement
-                            << "\t\t\t\t}," << std::endl
-                        << "\t\t\t" << "}," << std::endl
-                // single spin flip
-                        << "\t\t\t" << "'single': {" << std::endl
-                    // magnetization
-                            << "\t\t\t\t" << "'magnetization': {" << std::endl
-                            << singleMagnetizationMeasurement
-                            << "\t\t\t\t}," << std::endl
-                    // energy
-                            << "\t\t\t\t" << "'energy': {" << std::endl
-                            << singleEnergyMeasurement
-                            << "\t\t\t\t}," << std::endl
-                    // acceptanceRate
-                            << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
-                            << singleAcceptanceRateMeasurement
-                            << "\t\t\t\t}," << std::endl
-                        << "\t\t\t" << "}" << std::endl
-                // end
-                        << "\t\t}" << std::endl
-                        << "\t}," << std::endl;
-            }
-            
-            // clear the measurements
-            wolffMagnetizationMeasurement.clear();
-            wolffEnergyMeasurement.clear();
-            wolffClusterSizeMeasurement.clear();
-            
-            singleMagnetizationMeasurement.clear();
-            singleEnergyMeasurement.clear();
-            singleAcceptanceRateMeasurement.clear();
+                // output measurement data
+                // write data
+                #pragma omp critical
+                {
+                    std::cerr << "[" << omp_get_thread_num() << "] writing output" << std::endl;
+
+                    myfile  << "\t{" << std::endl
+                            << "\t\t" << "'temperature': " << startingTemperature+j*temperatureStep << "," << std::endl
+                            << "\t\t" << "'systemSize': " << startingSystemSize+k*systemSizeStep << "," << std::endl
+                            << "\t\t" << "'results': {" << std::endl
+                    // wolff
+                            << "\t\t\t" << "'wolff': {" << std::endl
+                        // magnetization
+                                << "\t\t\t\t" << "'magnetization': {" << std::endl
+                                << wolffMagnetizationMeasurement
+                                << "\t\t\t\t}," << std::endl
+                        // energy
+                                << "\t\t\t\t" << "'energy': {" << std::endl
+                                << wolffEnergyMeasurement
+                                << "\t\t\t\t}," << std::endl
+                        // cluster size
+                                << "\t\t\t\t" << "'clusterSize': {" << std::endl
+                                << wolffClusterSizeMeasurement
+                                << "\t\t\t\t}," << std::endl
+                            << "\t\t\t" << "}," << std::endl
+                    // single spin flip
+                            << "\t\t\t" << "'single': {" << std::endl
+                        // magnetization
+                                << "\t\t\t\t" << "'magnetization': {" << std::endl
+                                << singleMagnetizationMeasurement
+                                << "\t\t\t\t}," << std::endl
+                        // energy
+                                << "\t\t\t\t" << "'energy': {" << std::endl
+                                << singleEnergyMeasurement
+                                << "\t\t\t\t}," << std::endl
+                        // acceptanceRate
+                                << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
+                                << singleAcceptanceRateMeasurement
+                                << "\t\t\t\t}," << std::endl
+                            << "\t\t\t" << "}" << std::endl
+                    // end
+                            << "\t\t}" << std::endl
+                            << "\t}," << std::endl;
+                }
+
+                // clear the measurements
+                wolffMagnetizationMeasurement.clear();
+                wolffEnergyMeasurement.clear();
+                wolffClusterSizeMeasurement.clear();
+
+                singleMagnetizationMeasurement.clear();
+                singleEnergyMeasurement.clear();
+                singleAcceptanceRateMeasurement.clear();
+            } // system size loop
         } // temperature loop
     } // omp parallel
     
