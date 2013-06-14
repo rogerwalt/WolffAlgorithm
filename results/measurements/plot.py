@@ -1,6 +1,6 @@
 import pylab as pl
 
-import data_wolff_single_different_systemSizes_38e2c3474799a5e9cc375c760ab488327fdacf06 as data
+import data_wolff_single_different_systemSizes_d668b36e69704886f1e4ba00f9d94bf0a81b0227 as data
 
 xlbl='T'
 maxBinSingle = len(data.data[1]['results']['single']['energy']['stderr']) - 1
@@ -56,7 +56,7 @@ def plotClusterSize():
     fig = pl.gcf()
     fig.suptitle(title,fontsize=14)
     pl.xlabel(xlbl)
-    pl.legend(loc='lower right')
+    pl.legend(loc='left')
     pl.show()
    
 
