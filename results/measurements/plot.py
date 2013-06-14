@@ -118,6 +118,9 @@ plotComparison('energy')
 title='Magnetization'
 plotComparison('magnetization')
 
+title='Magnetization squared'
+plotComparison('magnetizationSquared')
+
 # plot acceptance rate
 title='Acceptance rate'
 plotAcceptanceRate()
