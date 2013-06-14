@@ -1,15 +1,17 @@
 import pylab as pl
 
-import data_wolff_single_different_systemSizes_e514797c3998196a03f802143350fe5a905ce1ee as data
+import data_wolff_single_different_systemSizes_38e2c3474799a5e9cc375c760ab488327fdacf06 as data
 
 xlbl='T'
+maxBinSingle = len(data.data[1]['results']['single']['energy']['stderr']) - 1
+maxBinWolff = len(data.data[1]['results']['wolff']['energy']['stderr']) - 1
 
 # sort plotdata by systemsize and temperature
 def plotComparison(measure):
-    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single'][measure]['mean'], data.data[x]['results']['single'][measure]['stderr'][5]) for x in range(len(data.data))]
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single'][measure]['mean'], data.data[x]['results']['single'][measure]['stderr'][maxBinSingle]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
 
-    pltdataWolff = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff'][measure]['mean'], data.data[x]['results']['wolff'][measure]['stderr'][5]) for x in range(len(data.data))]
+    pltdataWolff = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff'][measure]['mean'], data.data[x]['results']['wolff'][measure]['stderr'][maxBinWolff]) for x in range(len(data.data))]
     pltdataWolff.sort(key=lambda x: (x[0], x[1]))
 
     # initialize figure
@@ -31,7 +33,7 @@ def plotComparison(measure):
     pl.show()
 
 def plotAcceptanceRate():
-    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single']['acceptanceRate']['mean'], data.data[x]['results']['single']['acceptanceRate']['stderr'][5]) for x in range(len(data.data))]
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single']['acceptanceRate']['mean'], data.data[x]['results']['single']['acceptanceRate']['stderr'][maxBinSingle]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
     
     for systemSize in sorted(list(set([a for (a,x,y,z) in pltdataSingle]))):
@@ -45,7 +47,7 @@ def plotAcceptanceRate():
 
 
 def plotClusterSize():
-    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff']['clusterSize']['mean'], data.data[x]['results']['wolff']['clusterSize']['stderr'][5]) for x in range(len(data.data))]
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff']['clusterSize']['mean'], data.data[x]['results']['wolff']['clusterSize']['stderr'][maxBinWolff]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
 
     for systemSize in sorted(list(set([a for (a,x,y,z) in pltdataSingle]))):
@@ -59,7 +61,7 @@ def plotClusterSize():
    
 
 def plotClusterSizeRelative():
-    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff']['clusterSize']['mean'], data.data[x]['results']['wolff']['clusterSize']['stderr'][5]) for x in range(len(data.data))]
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff']['clusterSize']['mean'], data.data[x]['results']['wolff']['clusterSize']['stderr'][maxBinWolff]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
 
     for systemSize in sorted(list(set([a for (a,x,y,z) in pltdataSingle]))):
@@ -73,10 +75,10 @@ def plotClusterSizeRelative():
 
  
 def plotComparisonAutoCorrelation(measure):
-    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single'][measure]['autocorr'][4]) for x in range(len(data.data))]
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single'][measure]['autocorr'][maxBinWolff]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
 
-    pltdataWolff = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff'][measure]['autocorr'][4]) for x in range(len(data.data))]
+    pltdataWolff = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff'][measure]['autocorr'][maxBinWolff]) for x in range(len(data.data))]
     pltdataWolff.sort(key=lambda x: (x[0], x[1]))
 
     # initialize figure
