@@ -119,7 +119,7 @@ template <typename T> std::ostream& operator<< (std::ostream& out, const myMeasu
     for (int i=0;i<N-1;i++) {
         out << m.time(i) << ",";
     }
-    out << m.mean(N-1) << "]," << std::endl;
+    out << m.time(N-1) << "]," << std::endl;
     
 //	out << "Result: " << m.mean() << " +- " << m.error() << std::endl;
 //	out << "Bins: " << N << std::endl;
