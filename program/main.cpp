@@ -81,7 +81,7 @@ class IsingLattice {
                 }
             }
 
-            return energy;
+            return energy/2.0;
         }
 
     public:
