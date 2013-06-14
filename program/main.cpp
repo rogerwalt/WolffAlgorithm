@@ -348,7 +348,8 @@ class IsingLattice {
 
 void measure() {
     unsigned int systemSize = 10;
-    unsigned int numMeasurementValues = 5e3;
+    unsigned int numWolffMeasurementValues = 1e3;
+    unsigned int numSingleMeasurementValues = 1e5;
     
     const double startingTemperature = 1;
     const double temperatureStep = 0.05;
@@ -404,18 +405,21 @@ void measure() {
                 { std::cerr << "[" << omp_get_thread_num() << "] thermalization complete" << std::endl; }
 
                 // evolve in time and measure!
-                for (unsigned k=0; k<numMeasurementValues; ++k) {
+                for (unsigned k=0; k<numWolffMeasurementValues; ++k) {
                     // measure energy
                     wolffEnergyMeasurement.add_plain(wolffLattice.computeNormalizedEnergy());
-                    singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
 
                     // measure magnetization
                     wolffMagnetizationMeasurement.add_plain(wolffLattice.computeNormalizedMagnetization());
-                    singleMagnetizationMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
 
                     // do wolff step and measure cluster size
                     wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
-
+                }
+                for (unsigned k=0; k<numSingleMeasurementValues; ++k) {
+                    singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
+                    
+                    singleMagnetizationMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
+                    
                     // do single step and measure acceptance rate
                     singleLattice.timeStep();
                     singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
