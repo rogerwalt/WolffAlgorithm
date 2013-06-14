@@ -281,7 +281,7 @@ class IsingLattice {
             if (cluster.count(coordinate(x,y,z))) return;
             
             // probability to connect nodes
-            double prob = 1 - exp(-2*beta_*J_ * startingNodeSpin * getSpin(x,y,z));
+            double prob = 1 - exp(2 * beta_ * J_ * startingNodeSpin * getSpin(x,y,z));
             
             if (real_d_(mt_) < prob) {
                 stack.push(coordinate(x,y,z));
