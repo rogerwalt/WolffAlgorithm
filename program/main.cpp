@@ -272,13 +272,16 @@ class IsingLattice {
         void addNodeToClusterAndFlipSpinIfProbable(
                 std::stack<coordinate> &stack,
                 std::set<coordinate> &cluster,
-                double prob,
+                int startingNodeSpin,
                 unsigned int x,
                 unsigned int y,
                 unsigned int z)
         {
             // if node already in cluster, dont check again
             if (cluster.count(coordinate(x,y,z))) return;
+            
+            // probability to connect nodes
+            double prob = 1 - exp(-2*beta_*J_ * startingNodeSpin * getSpin(x,y,z));
             
             if (real_d_(mt_) < prob) {
                 stack.push(coordinate(x,y,z));
@@ -292,9 +295,6 @@ class IsingLattice {
             unsigned int x,y,z;
             std::stack<coordinate> stack;
             std::set<coordinate> cluster;
-
-            // probability to connect nodes
-            prob = 1-exp(-2*beta_*J_);
             
             // choose random node
             x=int_i_x_(mt_); y=int_i_y_(mt_); z=int_i_z_(mt_);
@@ -306,6 +306,8 @@ class IsingLattice {
             
             flipSpin(x,y,z);
             
+            int startingNodeSpin = getSpin(x,y,z);
+            
             // while stack not empty
             while (!stack.empty()) {
                 // take last node coordinates from stack
@@ -316,29 +318,29 @@ class IsingLattice {
                   // add them to stack with probability p
                     
                 // x+1
-                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, startingNodeSpin,
                         (currentCoordinates.x+1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
 
                 // x-1
-                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, startingNodeSpin,
                         (currentCoordinates.x+latticeLength_-1)%latticeLength_, currentCoordinates.y, currentCoordinates.z);
 
                 
                 // y+1
-                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, startingNodeSpin,
                         currentCoordinates.x, (currentCoordinates.y+1)%latticeLength_, currentCoordinates.z);
 
                 // y-1
-                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, startingNodeSpin,
                         currentCoordinates.x, (currentCoordinates.y+latticeLength_-1)%latticeLength_, currentCoordinates.z);
 
                 
                 // z+1
-                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, startingNodeSpin,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+1)%latticeLength_);
 
                 // z-1
-                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, prob,
+                addNodeToClusterAndFlipSpinIfProbable(stack, cluster, startingNodeSpin,
                         currentCoordinates.x, currentCoordinates.y, (currentCoordinates.z+latticeLength_-1)%latticeLength_);
             }
             
@@ -347,7 +349,6 @@ class IsingLattice {
 };
 
 void measure() {
-    unsigned int systemSize = 10;
     unsigned int numWolffMeasurementValues = 1e3;
     unsigned int numSingleMeasurementValues = 1e5;
     
@@ -374,10 +375,12 @@ void measure() {
         // initialize measurement containers
             // wolff
             myMeasurement<double> wolffMagnetizationMeasurement;
+            myMeasurement<double> wolffMagnetizationSquaredMeasurement;
             myMeasurement<double> wolffEnergyMeasurement;
             myMeasurement<double> wolffClusterSizeMeasurement;
             // single spinflip
             myMeasurement<double> singleMagnetizationMeasurement;
+            myMeasurement<double> singleMagnetizationSquaredMeasurement;
             myMeasurement<double> singleEnergyMeasurement;
             myMeasurement<double> singleAcceptanceRateMeasurement;
         
@@ -410,7 +413,9 @@ void measure() {
                     wolffEnergyMeasurement.add_plain(wolffLattice.computeNormalizedEnergy());
 
                     // measure magnetization
-                    wolffMagnetizationMeasurement.add_plain(wolffLattice.computeNormalizedMagnetization());
+                    double magn = wolffLattice.computeNormalizedMagnetization();
+                    wolffMagnetizationMeasurement.add_plain(magn);
+                    wolffMagnetizationSquaredMeasurement.add_plain(magn*magn);
 
                     // do wolff step and measure cluster size
                     wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
@@ -418,7 +423,9 @@ void measure() {
                 for (unsigned k=0; k<numSingleMeasurementValues; ++k) {
                     singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
                     
-                    singleMagnetizationMeasurement.add_plain(singleLattice.computeNormalizedMagnetization());
+                    double magn = singleLattice.computeNormalizedMagnetization();
+                    singleMagnetizationMeasurement.add_plain(magn);
+                    singleMagnetizationSquaredMeasurement.add_plain(magn*magn);
                     
                     // do single step and measure acceptance rate
                     singleLattice.timeStep();
@@ -441,6 +448,10 @@ void measure() {
                                 << "\t\t\t\t" << "'magnetization': {" << std::endl
                                 << wolffMagnetizationMeasurement
                                 << "\t\t\t\t}," << std::endl
+                        // squared magnetization
+                                << "\t\t\t\t" << "'magnetizationSquared': {" << std::endl
+                                << wolffMagnetizationSquaredMeasurement
+                                << "\t\t\t\t}," << std::endl
                         // energy
                                 << "\t\t\t\t" << "'energy': {" << std::endl
                                 << wolffEnergyMeasurement
@@ -455,6 +466,10 @@ void measure() {
                         // magnetization
                                 << "\t\t\t\t" << "'magnetization': {" << std::endl
                                 << singleMagnetizationMeasurement
+                                << "\t\t\t\t}," << std::endl
+                        // squared magnetization
+                                << "\t\t\t\t" << "'magnetizationSquared': {" << std::endl
+                                << singleMagnetizationSquaredMeasurement
                                 << "\t\t\t\t}," << std::endl
                         // energy
                                 << "\t\t\t\t" << "'energy': {" << std::endl
@@ -472,10 +487,12 @@ void measure() {
 
                 // clear the measurements
                 wolffMagnetizationMeasurement.clear();
+                wolffMagnetizationSquaredMeasurement.clear();
                 wolffEnergyMeasurement.clear();
                 wolffClusterSizeMeasurement.clear();
 
                 singleMagnetizationMeasurement.clear();
+                singleMagnetizationSquaredMeasurement.clear();
                 singleEnergyMeasurement.clear();
                 singleAcceptanceRateMeasurement.clear();
             } // system size loop
