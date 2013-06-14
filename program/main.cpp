@@ -226,7 +226,7 @@ class IsingLattice {
 
             // compute energy difference of configurations Y and X
             deltaE = energyY - energyX;
-
+            
             // if deltaE < 0 => spin stays flipped
             // if deltaE > 0 => probability that spin stays flipped is exp(-deltaE/k*T)
             if (deltaE > 0) {
@@ -291,7 +291,6 @@ class IsingLattice {
         }
         
         unsigned int doWolffStep() {
-            double prob;
             unsigned int x,y,z;
             std::stack<coordinate> stack;
             std::set<coordinate> cluster;
@@ -504,33 +503,6 @@ void measure() {
     
     // close file
     myfile.close();
-}
-
-// shows the difference of the critical slowing down of the metropolis algorithm versus the wolff algorithm
-void plot2() {
-    const double criticalTemperature = 4.51;
-    const unsigned int systemSize = 10;
-    const unsigned int numMeasurementValues = 10e3;
-    
-    IsingLattice metropolisLattice(criticalTemperature, systemSize);
-    IsingLattice wolffLattice(criticalTemperature, systemSize);
-    
-    double metropolisEnergy;
-    double wolffEnergy;
-    
-    for (unsigned int i=0; i<numMeasurementValues; ++i) {
-        // measure metropolis
-        metropolisLattice.timeStep();
-        
-        metropolisEnergy = metropolisLattice.computeNormalizedEnergy();
-        
-        // measure wolff
-        wolffLattice.doWolffStep();
-
-        wolffEnergy = wolffLattice.computeNormalizedEnergy();
-        
-        std::cout << i << " " << metropolisEnergy << " " << wolffEnergy << std::endl;
-    }
 }
 
 // to plot data fast:
