@@ -87,17 +87,21 @@
 \item<2-> We can't compute all configurations.
 	\note[item]<2> {Why not? \( \rightarrow 2^N = 2^{L^d} \) e.g. \( L = systemSize = 15 \) in 2 dimensions: \(2^{15^2} = 2^{225} = 5 \cdot 10^{67}\)}
 	\note[item]<2> {We can't compute the exact expectation value of an observable. But that's what we're interested in.}
-\item<3-> We don't want to sample equally distributed over energy.
+\item<3-> We can't sample equally distributed over energy.
 	\note[item]<3> {Because the distribution of the average energy gets sharper with increasing size \(\left(\alpha \ \sqrt{L^d}\right)\).}
+\item<4-> Solution: Biased sampling using Metropolis (M(RT)$^2$) algorithm.
 \end{itemize}
 \end{frame}
 
 
 
+\begin{frame}
+\centerline{\huge{Questions}}
+\end{frame}
 
-
-
-
+\begin{frame}{Wolff or Swendsen-Wang?}
+Swendsen-Wang better for parallelization because it touches the whole lattice.
+\end{frame}
 
 
 
