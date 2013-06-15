@@ -7,6 +7,7 @@
 #include <stack>
 #include <set>
 #include <fstream>      // file operations
+#include <map>
 
 #include "myMeasurement.hpp"
 
@@ -183,25 +184,17 @@ class IsingLattice {
             failed_ = 0; steps_ = 0;
         }
         
-        double computeSpatialSpinCorrelationForDistance(unsigned int distance) {
-            // the spatial correlation between to spins is the average of the products of all spin pairs with the given distance in the system
-            double correlation = 0;
+        double computeSpatialCorrelationForDisplacement(unsigned int dx, unsigned int dy, unsigned int dz) {
+            double ret = 0;
             for (unsigned int x=0; x<latticeLength_; ++x) {
                 for (unsigned int y=0; y<latticeLength_; ++y) {
                     for (unsigned int z=0; z<latticeLength_; ++z) {
-                        correlation += getSpin(x,y,z) * getSpin(x + distance,y,z);
-                        correlation += getSpin(x,y,z) * getSpin(x - distance,y,z);
-                        correlation += getSpin(x,y,z) * getSpin(x,y + distance,z);
-                        correlation += getSpin(x,y,z) * getSpin(x,y - distance,z);
-                        correlation += getSpin(x,y,z) * getSpin(x,y,z + distance);
-                        correlation += getSpin(x,y,z) * getSpin(x,y,z - distance);
-                        correlation /= 6.0;
+                         ret += getSpin(x, y, z)*getSpin(x+dx, y+dy, z+dz);
                     }
                 }
             }
-            
-            return correlation / (latticeNode_.size() * 1.0);
-        }
+            return ret / (latticeNode_.size() * 1.0);
+        } 
         
         /*######################################*
          * Single spinflip metropolis functions *
@@ -377,11 +370,26 @@ void measure() {
             myMeasurement<double> wolffMagnetizationSquaredMeasurement;
             myMeasurement<double> wolffEnergyMeasurement;
             myMeasurement<double> wolffClusterSizeMeasurement;
+            std::map<unsigned int, myMeasurement<double>> wolffSpatialCorrelations;
+            
+            // measure spatial correlations for some distances
+            for (unsigned int q=5; q<=15; q+=5) {
+                wolffSpatialCorrelations.insert(std::pair<unsigned int, myMeasurement<double>>(q, myMeasurement<double>()));
+            }
+            
             // single spinflip
             myMeasurement<double> singleMagnetizationMeasurement;
             myMeasurement<double> singleMagnetizationSquaredMeasurement;
             myMeasurement<double> singleEnergyMeasurement;
             myMeasurement<double> singleAcceptanceRateMeasurement;
+            std::map<unsigned int, myMeasurement<double>> singleSpatialCorrelations;
+            
+            // measure spatial correlations for some distances
+            for (unsigned int q=5; q<=15; q+=5) {
+                singleSpatialCorrelations.insert(std::pair<unsigned int, myMeasurement<double>>(q, myMeasurement<double>()));
+            }
+            
+            std::map<unsigned int, myMeasurement<double>>::iterator it;
         
         #pragma omp for
         for (int i=0;i<numberOfTemperatureLoops;++i) { // temperature loop
@@ -415,6 +423,11 @@ void measure() {
                     double magn = wolffLattice.computeNormalizedMagnetization();
                     wolffMagnetizationMeasurement.add_plain(magn);
                     wolffMagnetizationSquaredMeasurement.add_plain(magn*magn);
+                    
+                    // measure spatial correlations
+                    for (it=wolffSpatialCorrelations.begin(); it!=wolffSpatialCorrelations.end(); ++it) {
+                        it->second.add_plain(wolffLattice.computeSpatialCorrelationForDisplacement(it->first,0,0));
+                    }
 
                     // do wolff step and measure cluster size
                     wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
@@ -425,6 +438,11 @@ void measure() {
                     double magn = singleLattice.computeNormalizedMagnetization();
                     singleMagnetizationMeasurement.add_plain(magn);
                     singleMagnetizationSquaredMeasurement.add_plain(magn*magn);
+                    
+                    // measure spatial correlations
+                    for (it=singleSpatialCorrelations.begin(); it!=singleSpatialCorrelations.end(); ++it) {
+                        it->second.add_plain(singleLattice.computeSpatialCorrelationForDisplacement(it->first,0,0));
+                    }
                     
                     // do single step and measure acceptance rate
                     singleLattice.timeStep();
@@ -454,9 +472,15 @@ void measure() {
                         // energy
                                 << "\t\t\t\t" << "'energy': {" << std::endl
                                 << wolffEnergyMeasurement
-                                << "\t\t\t\t}," << std::endl
+                                << "\t\t\t\t}," << std::endl;
+                        // spatial correlations
+                                for (it=wolffSpatialCorrelations.begin(); it!=wolffSpatialCorrelations.end(); ++it) {
+                                    myfile  << "\t\t\t\t" << "'spatialCorr" << it->first << "': {" << std::endl
+                                            << it->second
+                                            << "\t\t\t\t}," << std::endl;
+                                }
                         // cluster size
-                                << "\t\t\t\t" << "'clusterSize': {" << std::endl
+                         myfile << "\t\t\t\t" << "'clusterSize': {" << std::endl
                                 << wolffClusterSizeMeasurement
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}," << std::endl
@@ -473,9 +497,15 @@ void measure() {
                         // energy
                                 << "\t\t\t\t" << "'energy': {" << std::endl
                                 << singleEnergyMeasurement
-                                << "\t\t\t\t}," << std::endl
+                                << "\t\t\t\t}," << std::endl;
+                         // spatial correlations
+                                for (it=singleSpatialCorrelations.begin(); it!=singleSpatialCorrelations.end(); ++it) {
+                                    myfile  << "\t\t\t\t" << "'spatialCorr" << it->first << "': {" << std::endl
+                                            << it->second
+                                            << "\t\t\t\t}," << std::endl;
+                                }
                         // acceptanceRate
-                                << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
+                         myfile << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
                                 << singleAcceptanceRateMeasurement
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}" << std::endl
