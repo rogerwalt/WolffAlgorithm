@@ -32,6 +32,27 @@ def plotComparison(measure):
     ax1.legend(bbox_to_anchor=(1.01, 0), loc='lower left', borderaxespad=0.)
     pl.show()
 
+
+def plotForOneSystemSize(system, systemSize, measure):
+    maxBin = 0
+    if system == 'single':
+        maxbin = maxBinSingle
+    else:
+        maxbin = maxBinWolff
+
+    pltdata = [(data.data[x]['temperature'], data.data[x]['results'][system][measure]['mean'], data.data[x]['results'][system][measure]['stderr'][maxBin]) for x in range(len(data.data)) if data.data[x]['systemSize'] == systemSize]
+    # sort by temperature
+    pltdata.sort(key=lambda x: x[0])
+
+    pl.errorbar([x for (x,y,z) in pltdata],[y for (x,y,z) in pltdata],[z for (x,y,z) in pltdata])
+
+    fig = pl.gcf()
+    fig.suptitle(title,fontsize=14) 
+    pl.xlabel(xlbl)
+    pl.ylim((-0.5,1.5))
+    pl.show()
+    
+
 def plotAcceptanceRate():
     pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single']['acceptanceRate']['mean'], data.data[x]['results']['single']['acceptanceRate']['stderr'][maxBinSingle]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
@@ -98,6 +119,10 @@ def plotComparisonAutoCorrelation(measure):
     fig.suptitle('Autocorrelation: '+title, fontsize=14)
     ax1.legend(bbox_to_anchor=(1.01, 0), loc='lower left', borderaxespad=0.)
     pl.show()
+
+# plot magnetization for systemsize 15 single spin flip
+title='Magnetization'
+plotForOneSystemSize('single', 15, 'magnetization')
 
 # plot cluster size
 title='Relative Cluster size'

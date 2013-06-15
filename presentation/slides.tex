@@ -71,18 +71,19 @@
 \item<2-> Lattice with \(N\) sites
 \item<3-> Discrete integer spins \( \sigma_i = \pm 1 \) on each lattice site
 \item<4-> \[ \mathscr{H}(\sigma) = -J \sum\limits_{i, j} \sigma_i \sigma_j - \mu H \sum\limits_i \sigma_i \]
+	\note[item]<4> {Sum over nearest neighbours.}
 	\note[item]<5> {More favorable for the spins to be aligned!}
 \item<5-> \( J \): interaction, \( H \): external field
 	\note[item]<5> {\( J_{ij} \) in general case, \( J>0 \): ferromagnetic, \( J<0 \): antiferromagnetic}
 \item<6-> \[ p(\sigma, T) = \frac{e^{-\beta \mathscr{H}(\sigma)}}{\mathscr{Z}(T)}, \ \ \ \ \beta=\frac{1}{k_B T}\]
 	\note[item]<6> {Configuration probability given by boltzmann distribution, Z partition function, given as \[ \mathscr{Z}(T) = \sum_\sigma e^{-\beta \mathscr{H}(\sigma)},\ \ \beta = \frac{1}{k_B T} \]}
 	\note[item]<6> {So we are looking at a canonical system with constant temperature T.}
-\item<7-> \[ \left< M \right>|_T = \sum_\sigma M(\sigma)p(\sigma,T) \]
+\item<7-> \[ \left< M \right>_T = \sum_\sigma M(\sigma)p(\sigma,T) \]
 	\note[item]<7> {Measurement value of a function, e.g. magnetization, is given by the sum over all states of the measurement value at the configuration times the configuration probability.}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Ising model - Monte Carlo}
+\begin{frame}{Ising model - Monte Carlo I}
 \begin{itemize}
 \item<2-> We can't compute all configurations.
 	\note[item]<2> {Why not? \( \rightarrow 2^N = 2^{L^d} \) e.g. \( L = systemSize = 15 \) in 2 dimensions: \(2^{15^2} = 2^{225} = 5 \cdot 10^{67}\)}
@@ -93,7 +94,31 @@
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Single spin flip metropolis - Algorithm}
+\pause
+\begin{align*}
+A(X \rightarrow Y) &= \min \left( 1, \frac{p(Y)}{p(X)} \right) \\ 
+&= \min \left( 1, e^{- \beta \left[ E(Y)-E(X) \right] } \right)
+\end{align*}
+\note {If energy decreases, always accept. If energy increases, accept with probability \( e^{- \beta \Delta E} \).}
+\begin{enumerate}
+\item Choose on site.
+	\note[item] {New state given by spinflip at this site.}
+\item Calculate energy difference.
+\item Accept new configuration with transition probability above.
+\end{enumerate}
+\note{Blazingly fast (Troells: 2 flips/ns?), easy to implement.}
+\end{frame}
 
+\begin{frame}{Single spin flip metropolis - Results}
+Spontaneous magnetization \( M_s(T) = \left< \frac{1}{N} \sum\limits_{i=1}^N \sigma_i \right> \)
+\begin{columns}[c]
+	\column{.5\textwidth}
+	\includegraphics[width=\textwidth]{img/single_magnetization_theoretical.png}
+	\column{.5\textwidth}
+	\includegraphics[width=\textwidth]{img/single_magnetization_size15.png}
+\end{columns}
+\end{frame}
 
 \begin{frame}
 \centerline{\huge{Questions}}
