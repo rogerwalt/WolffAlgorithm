@@ -139,9 +139,17 @@ Spontaneous magnetization \( M_s(T) = \left< \frac{1}{N} \sum\limits_{i=1}^N \si
 \note[item]<2> {The point is that the spins can also be aligned when they are all -1. But we didn't see that happen. Why?}
 \note[item]<2> {I took 0.5 million measurement values, after every single spin flip. This means that the spin on every site could have flipped around 150 times. But it didn't. This is why:}
 \pause
-\centering
-\includegraphics[height=15em]{img/single_acceptanceRate.png}
-\note[item]<3> {What we see here is the acceptance rate of a spin flip. It is one if the suggested new configuration through the single spin flip was accepted. Well, it's actually almost zero for low temperatures. So we move ultra slow through phase space, which is no fun, because we want to do an ergodic sampling.}
+\begin{columns}[c]
+	\column{.5\textwidth}
+		\includegraphics[width=\textwidth]{img/single_acceptanceRate.png}
+		\note[item]<3> {What we see here is the acceptance rate of a spin flip. It is one if the suggested new configuration through the single spin flip was accepted. Well, it's actually almost zero for low temperatures. So we move ultra slow through phase space, which is no fun, because we want to do an ergodic sampling.}
+	\column{.5\textwidth}
+		\includegraphics[width=\textwidth]{img/single_noAcceptedFlips.png}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Why cluster algorithms are better}
+\includegraphics[width=\textwidth]{img/comp_magnetization.png}
 \end{frame}
 
 
@@ -152,9 +160,6 @@ Spontaneous magnetization \( M_s(T) = \left< \frac{1}{N} \sum\limits_{i=1}^N \si
 \begin{frame}{Wolff or Swendsen-Wang?}
 Swendsen-Wang better for parallelization because it touches the whole lattice.
 \end{frame}
-
-
-
 
 \begin{frame}{A sample slide}
 

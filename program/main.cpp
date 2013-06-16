@@ -180,6 +180,10 @@ class IsingLattice {
             return 1 - failed_ / (1.0*steps_);
         }
         
+        unsigned int getNoAcceptedFlips() {
+            return steps_ - failed_;
+        }
+        
         void resetAcceptanceRate() {
             failed_ = 0; steps_ = 0;
         }
@@ -382,6 +386,7 @@ void measure() {
             myMeasurement<double> singleMagnetizationSquaredMeasurement;
             myMeasurement<double> singleEnergyMeasurement;
             myMeasurement<double> singleAcceptanceRateMeasurement;
+            myMeasurement<double> singleAcceptedMeasurement;
             std::map<unsigned int, myMeasurement<double>> singleSpatialCorrelations;
             
             // measure spatial correlations for some distances
@@ -447,6 +452,7 @@ void measure() {
                     // do single step and measure acceptance rate
                     singleLattice.timeStep();
                     singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
+                    singleAcceptedMeasurement.add_plain(singleLattice.getNoAcceptedFlips());
                 }
 
                 // output measurement data
@@ -507,6 +513,9 @@ void measure() {
                         // acceptanceRate
                          myfile << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
                                 << singleAcceptanceRateMeasurement
+                                << "\t\t\t\t}," << std::endl
+                                << "\t\t\t\t" << "'noAcceptedFlips': {" << std::endl
+                                << singleAcceptedMeasurement
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}" << std::endl
                     // end
