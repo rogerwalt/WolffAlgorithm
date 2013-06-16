@@ -158,8 +158,8 @@ def plotComparisonAutoCorrelation(measure):
     pl.show()
 
 # plot spatial spin correlations
-title='Spatial spin correlation at T=5'
-plotComparisonSpatialCorrelation(5)
+title='Spatial spin correlation at T=2'
+plotComparisonSpatialCorrelation(2)
 
 # plot magnetization for systemsize 15 single spin flip
 title='Magnetization'
