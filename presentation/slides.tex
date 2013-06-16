@@ -88,9 +88,9 @@
 \item<2-> We can't compute all configurations.
 	\note[item]<2> {Why not? \( \rightarrow 2^N = 2^{L^d} \) e.g. \( L = systemSize = 15 \) in 2 dimensions: \(2^{15^2} = 2^{225} = 5 \cdot 10^{67}\)}
 	\note[item]<2> {We can't compute the exact expectation value of an observable. But that's what we're interested in.}
-\item<3-> We can't sample equally distributed over energy.
+\item<3-> We can't sample uniformely distributed over energy.
 	\note[item]<3> {Because the distribution of the average energy gets sharper with increasing size \(\left(\alpha \ \sqrt{L^d}\right)\).}
-\item<4-> Solution: Biased sampling using Metropolis (M(RT)$^2$) algorithm.
+\item<4-> Solution: Importance sampling using Metropolis (M(RT)$^2$) algorithm.
 \end{itemize}
 \end{frame}
 
@@ -111,14 +111,39 @@ A(X \rightarrow Y) &= \min \left( 1, \frac{p(Y)}{p(X)} \right) \\
 \end{frame}
 
 \begin{frame}{Single spin flip metropolis - Results}
+\pause
 Spontaneous magnetization \( M_s(T) = \left< \frac{1}{N} \sum\limits_{i=1}^N \sigma_i \right> \)
 \begin{columns}[c]
 	\column{.5\textwidth}
+	\pause
 	\includegraphics[width=\textwidth]{img/single_magnetization_theoretical.png}
 	\column{.5\textwidth}
+	\pause
 	\includegraphics[width=\textwidth]{img/single_magnetization_size15.png}
 \end{columns}
+\note[item]<1> {I implemented this single spin flip metropolis algorithm and would like to show you some results.}
+\note[item]<2> {Let's look at the spontaneous magnetization.}
+\note[item]<3> {In theory, we expect the spontaneous magnetization to look like this.}
+\note[item]<4> {Well, this is what we get. It looks perfect - right? Well, life is not so easy. This result is in fact not the truth. Let me show you what we expect for the spontaneous magnetization.}
 \end{frame}
+
+\begin{frame}{Ising model - 2 spins}
+\note{Show that we should expect the magnetization to vanish.}
+\end{frame}
+
+\begin{frame}{Single spin flip metropolis - To flip or not to flip}
+\pause
+\[ \mathscr{H}(\sigma) = -J \sum\limits_{i, j} \sigma_i \sigma_j \]
+\note[item]<1> {Now that we know that the magnetization should vanish, let's explore why it hasn't done so.}
+\note[item]<2> {The hamiltonian of the system states clearly that the spins like to be aligned. They were all +1 at the beginning, and then thermalized (brought to thermodynamic equilibrium) in 3 sweeps (abbrevation for: 3 times number of sites spinflips).}
+\note[item]<2> {The point is that the spins can also be aligned when they are all -1. But we didn't see that happen. Why?}
+\note[item]<2> {I took 0.5 million measurement values, after every single spin flip. This means that the spin on every site could have flipped around 150 times. But it didn't. This is why:}
+\pause
+\centering
+\includegraphics[height=15em]{img/single_acceptanceRate.png}
+\note[item]<3> {What we see here is the acceptance rate of a spin flip. It is one if the suggested new configuration through the single spin flip was accepted. Well, it's actually almost zero for low temperatures. So we move ultra slow through phase space, which is no fun, because we want to do an ergodic sampling.}
+\end{frame}
+
 
 \begin{frame}
 \centerline{\huge{Questions}}
