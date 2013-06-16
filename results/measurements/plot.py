@@ -1,6 +1,7 @@
 import pylab as pl
+import re
 
-import data_wolff_single_different_systemSizes_d668b36e69704886f1e4ba00f9d94bf0a81b0227 as data
+import data_wolff_single_different_systemSizes_fa725ee642244f97aa049a8b7be3a6ed750149c7 as data
 
 xlbl='T'
 maxBinSingle = len(data.data[1]['results']['single']['energy']['stderr']) - 1
@@ -31,7 +32,43 @@ def plotComparison(measure):
     fig.suptitle(title, fontsize=14)
     ax1.legend(bbox_to_anchor=(1.01, 0), loc='lower left', borderaxespad=0.)
     pl.show()
+    
+def plotComparisonSpatialCorrelation(temperature):
+    # find out which different spatial correlation measurements we expect
+    dist = list()
+    for asdf in data.data[0]['results']['single']:
+        match = re.match(r'\D+(\d+)', asdf)
+        if match != None:
+            dist.append(int(match.group(1)))
+    
+    dist.sort()
+    
+    pltdataSingle = list()
+    pltdataWolff = list()
+    for d in dist:
+        blupsSingle = [(data.data[x]['systemSize'], d, data.data[x]['results']['single']['spatialCorr'+str(d)]['mean'], data.data[x]['results']['single']['spatialCorr'+str(d)]['stderr'][maxBinSingle]) for x in range(len(data.data)) if data.data[x]['temperature'] == temperature]
+        blupsWolff = [(data.data[x]['systemSize'], d, data.data[x]['results']['wolff']['spatialCorr'+str(d)]['mean'], data.data[x]['results']['wolff']['spatialCorr'+str(d)]['stderr'][maxBinWolff]) for x in range(len(data.data)) if data.data[x]['temperature'] == temperature]
+        for i in range(len(blupsSingle)):
+            pltdataSingle.append(blupsSingle[i])
+            pltdataWolff.append(blupsWolff[i])
 
+    pltdataSingle.sort(key=lambda x: (x[0], x[1]))
+    pltdataWolff.sort(key=lambda x: (x[0], x[1]))
+
+    fig = pl.gcf()
+    ax1 = pl.subplot(211)
+
+    for systemSize in sorted(list(set([a for (a,x,y,z) in pltdataSingle]))):
+        pl.errorbar([x for (a,x,y,z) in pltdataSingle if a == systemSize],[y for (a,x,y,z) in pltdataSingle if a == systemSize],[z for (a,x,y,z) in pltdataSingle if a == systemSize], label=systemSize)
+    
+    pl.subplot(212, sharex = ax1)
+    for systemSize in sorted(list(set([a for (a,x,y,z) in pltdataWolff]))):
+        pl.errorbar([x for (a,x,y,z) in pltdataWolff if a == systemSize],[y for (a,x,y,z) in pltdataWolff if a == systemSize],[z for (a,x,y,z) in pltdataWolff if a == systemSize], label=systemSize)
+    
+    pl.xlabel('Distance')
+    fig.suptitle(title, fontsize=14)
+    ax1.legend(bbox_to_anchor=(1.01, 0), loc='lower left', borderaxespad=0.)
+    pl.show()
 
 def plotForOneSystemSize(system, systemSize, measure):
     maxBin = 0
@@ -43,7 +80,7 @@ def plotForOneSystemSize(system, systemSize, measure):
     pltdata = [(data.data[x]['temperature'], data.data[x]['results'][system][measure]['mean'], data.data[x]['results'][system][measure]['stderr'][maxBin]) for x in range(len(data.data)) if data.data[x]['systemSize'] == systemSize]
     # sort by temperature
     pltdata.sort(key=lambda x: x[0])
-
+    
     pl.errorbar([x for (x,y,z) in pltdata],[y for (x,y,z) in pltdata],[z for (x,y,z) in pltdata])
 
     fig = pl.gcf()
@@ -119,6 +156,10 @@ def plotComparisonAutoCorrelation(measure):
     fig.suptitle('Autocorrelation: '+title, fontsize=14)
     ax1.legend(bbox_to_anchor=(1.01, 0), loc='lower left', borderaxespad=0.)
     pl.show()
+
+# plot spatial spin correlations
+title='Spatial spin correlation at T=5'
+plotComparisonSpatialCorrelation(5)
 
 # plot magnetization for systemsize 15 single spin flip
 title='Magnetization'
