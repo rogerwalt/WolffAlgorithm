@@ -391,7 +391,7 @@ void measure() {
             
             std::map<unsigned int, myMeasurement<double>>::iterator it;
         
-        #pragma omp for
+        #pragma omp for schedule(dynamic)
         for (int i=0;i<numberOfTemperatureLoops;++i) { // temperature loop
 //            #pragma omp for
             for (int j=0;j<numberOfSystemSizeLoops;++j) { // system size loop
