@@ -8,6 +8,7 @@
 #include <set>
 #include <fstream>      // file operations
 #include <map>
+#include <chrono>
 
 #include "myMeasurement.hpp"
 
@@ -43,46 +44,8 @@ class IsingLattice {
         void flipSpin(unsigned int x, unsigned int y, unsigned int z) {
             assert(x<latticeLength_); assert(y<latticeLength_); assert(z<latticeLength_);
             
-            // update energySum
-            energySum_ -= 2*computeEnergyOfNode(x,y,z);
-            
-            // update spinSum
-            if (latticeNode_[x+y*latticeLength_+z*latticeLength_*latticeLength_] > 0) {
-                spinSum_ -= 2;
-            } else {
-                spinSum_ += 2;
-            }
-            
             // flip
             latticeNode_[x+y*latticeLength_+z*latticeLength_*latticeLength_] *= -1;
-        }
-        
-        int loopComputeSpinSum() {
-            double sum = 0;
-            // loop over all nodes
-            for (unsigned int x=0; x<latticeLength_; ++x) {
-                for (unsigned int y=0; y<latticeLength_; ++y) {
-                    for (unsigned int z=0; z<latticeLength_; ++z) {
-                        sum += getSpin(x,y,z);
-                    }
-                }
-            }
-            return sum;
-        }
-        
-        double loopComputeEnergySum() {
-            double energy = 0;
-
-            // loop over all nodes
-            for (unsigned int x=0; x<latticeLength_; ++x) {
-                for (unsigned int y=0; y<latticeLength_; ++y) {
-                    for (unsigned int z=0; z<latticeLength_; ++z) {
-                        energy += computeEnergyOfNode(x,y,z);
-                    }
-                }
-            }
-
-            return energy/2.0;
         }
 
     public:
@@ -116,8 +79,6 @@ class IsingLattice {
         , int_i_y_(0, length-1)
         , int_i_z_(0, length-1)
         {
-            spinSum_ = loopComputeSpinSum();
-            energySum_ = loopComputeEnergySum();
         }
 
         /*################*
@@ -159,46 +120,6 @@ class IsingLattice {
 
             return energy;
         }
-
-        double computeEnergy() {
-            return energySum_;
-        }
-        
-        double computeNormalizedEnergy() {
-            return computeEnergy() / (latticeNode_.size() * 1.0);
-        }
-
-        double computeMagnetization() {
-            return spinSum_;
-        }
-        
-        double computeNormalizedMagnetization() {
-            return computeMagnetization() / (latticeNode_.size() * 1.0);
-        }
-        
-        double computeAcceptanceRate() {
-            return 1 - failed_ / (1.0*steps_);
-        }
-        
-        unsigned int getNoAcceptedFlips() {
-            return steps_ - failed_;
-        }
-        
-        void resetAcceptanceRate() {
-            failed_ = 0; steps_ = 0;
-        }
-        
-        double computeSpatialCorrelationForDisplacement(unsigned int dx, unsigned int dy, unsigned int dz) {
-            double ret = 0;
-            for (unsigned int x=0; x<latticeLength_; ++x) {
-                for (unsigned int y=0; y<latticeLength_; ++y) {
-                    for (unsigned int z=0; z<latticeLength_; ++z) {
-                         ret += getSpin(x, y, z)*getSpin(x+dx, y+dy, z+dz);
-                    }
-                }
-            }
-            return ret / (latticeNode_.size() * 1.0);
-        } 
         
         /*######################################*
          * Single spinflip metropolis functions *
@@ -349,7 +270,7 @@ void measure() {
     unsigned int numSingleMeasurementValues = 5e5;
     
     const double startingTemperature = 0;
-    const double temperatureStep = 0.1;
+    const double temperatureStep = 0.5;
     const double endTemperature = 6;
     
     const double startingSystemSize = 5;
@@ -361,7 +282,7 @@ void measure() {
     
     // open file
     std::ofstream myfile;
-    myfile.open("data.py");
+    myfile.open("tdata.py");
     
     // prepare file
     myfile << "data = [" << std::endl;
@@ -370,89 +291,40 @@ void measure() {
     { // omp parallel
         // initialize measurement containers
             // wolff
-            myMeasurement<double> wolffMagnetizationMeasurement;
-            myMeasurement<double> wolffMagnetizationSquaredMeasurement;
-            myMeasurement<double> wolffEnergyMeasurement;
-            myMeasurement<double> wolffClusterSizeMeasurement;
-            std::map<unsigned int, myMeasurement<double>> wolffSpatialCorrelations;
-            
-            // measure spatial correlations for some distances
-            for (unsigned int q=5; q<=15; q+=5) {
-                wolffSpatialCorrelations.insert(std::pair<unsigned int, myMeasurement<double>>(q, myMeasurement<double>()));
-            }
+            myMeasurement<double> wolffTimeMeasurement;
             
             // single spinflip
-            myMeasurement<double> singleMagnetizationMeasurement;
-            myMeasurement<double> singleMagnetizationSquaredMeasurement;
-            myMeasurement<double> singleEnergyMeasurement;
-            myMeasurement<double> singleAcceptanceRateMeasurement;
-            myMeasurement<double> singleAcceptedMeasurement;
-            std::map<unsigned int, myMeasurement<double>> singleSpatialCorrelations;
-            
-            // measure spatial correlations for some distances
-            for (unsigned int q=5; q<=15; q+=5) {
-                singleSpatialCorrelations.insert(std::pair<unsigned int, myMeasurement<double>>(q, myMeasurement<double>()));
-            }
-            
-            std::map<unsigned int, myMeasurement<double>>::iterator it;
-        
+            myMeasurement<double> singleTimeMeasurement;
+
         #pragma omp for schedule(dynamic)
         for (int i=0;i<numberOfTemperatureLoops;++i) { // temperature loop
-//            #pragma omp for
             for (int j=0;j<numberOfSystemSizeLoops;++j) { // system size loop
                 #pragma omp critical
                 { std::cerr << "[" << omp_get_thread_num() << "] measuring for temperature: " << startingTemperature+i*temperatureStep << ", systemSize: " << startingSystemSize+j*systemSizeStep << std::endl; }
 
                 // initialize the systems
-                    IsingLattice wolffLattice(startingTemperature+i*temperatureStep, startingSystemSize+j*systemSizeStep);
-                    IsingLattice singleLattice(startingTemperature+i*temperatureStep, startingSystemSize+j*systemSizeStep);
-
-                // thermalize systems (relax to equilibrium)
-                    // wolff
-                    for (unsigned k=0; k<3*pow(startingSystemSize+j*systemSizeStep, 3); ++k) {
-                        wolffLattice.doWolffStep();
-                    }
-                    // single spinflip
-                    singleLattice.time3Sweep();
-                    singleLattice.resetAcceptanceRate();
-
-                #pragma omp critical
-                { std::cerr << "[" << omp_get_thread_num() << "] thermalization complete" << std::endl; }
+                    IsingLattice wolffLattice(1, startingSystemSize+j*systemSizeStep);
+                    IsingLattice singleLattice(1, startingSystemSize+j*systemSizeStep);
 
                 // evolve in time and measure!
                 for (unsigned k=0; k<numWolffMeasurementValues; ++k) {
-                    // measure energy
-                    wolffEnergyMeasurement.add_plain(wolffLattice.computeNormalizedEnergy());
+                    auto start = std::chrono::steady_clock::now();
+                    unsigned int clusterSize = wolffLattice.doWolffStep();
+                    auto end = std::chrono::steady_clock::now();
 
-                    // measure magnetization
-                    double magn = wolffLattice.computeNormalizedMagnetization();
-                    wolffMagnetizationMeasurement.add_plain(magn);
-                    wolffMagnetizationSquaredMeasurement.add_plain(magn*magn);
-                    
-                    // measure spatial correlations
-                    for (it=wolffSpatialCorrelations.begin(); it!=wolffSpatialCorrelations.end(); ++it) {
-                        it->second.add_plain(wolffLattice.computeSpatialCorrelationForDisplacement(it->first,0,0));
-                    }
-
-                    // do wolff step and measure cluster size
-                    wolffClusterSizeMeasurement.add_plain(wolffLattice.doWolffStep());
+                    int us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();
+                    wolffTimeMeasurement.add_plain(us/clusterSize);
                 }
+
+                #pragma omp critical
+                { std::cerr << "[" << omp_get_thread_num() << "] wolff done" << std::endl; }
+
                 for (unsigned k=0; k<numSingleMeasurementValues; ++k) {
-                    singleEnergyMeasurement.add_plain(singleLattice.computeNormalizedEnergy());
-                    
-                    double magn = singleLattice.computeNormalizedMagnetization();
-                    singleMagnetizationMeasurement.add_plain(magn);
-                    singleMagnetizationSquaredMeasurement.add_plain(magn*magn);
-                    
-                    // measure spatial correlations
-                    for (it=singleSpatialCorrelations.begin(); it!=singleSpatialCorrelations.end(); ++it) {
-                        it->second.add_plain(singleLattice.computeSpatialCorrelationForDisplacement(it->first,0,0));
-                    }
-                    
-                    // do single step and measure acceptance rate
+                    auto start = std::chrono::steady_clock::now();
                     singleLattice.timeStep();
-                    singleAcceptanceRateMeasurement.add_plain(singleLattice.computeAcceptanceRate());
-                    singleAcceptedMeasurement.add_plain(singleLattice.getNoAcceptedFlips());
+                    auto end = std::chrono::steady_clock::now();
+
+                    int us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();                    singleTimeMeasurement.add_plain(us);
                 }
 
                 // output measurement data
@@ -467,55 +339,16 @@ void measure() {
                             << "\t\t" << "'results': {" << std::endl
                     // wolff
                             << "\t\t\t" << "'wolff': {" << std::endl
-                        // magnetization
-                                << "\t\t\t\t" << "'magnetization': {" << std::endl
-                                << wolffMagnetizationMeasurement
-                                << "\t\t\t\t}," << std::endl
-                        // squared magnetization
-                                << "\t\t\t\t" << "'magnetizationSquared': {" << std::endl
-                                << wolffMagnetizationSquaredMeasurement
-                                << "\t\t\t\t}," << std::endl
-                        // energy
-                                << "\t\t\t\t" << "'energy': {" << std::endl
-                                << wolffEnergyMeasurement
-                                << "\t\t\t\t}," << std::endl;
-                        // spatial correlations
-                                for (it=wolffSpatialCorrelations.begin(); it!=wolffSpatialCorrelations.end(); ++it) {
-                                    myfile  << "\t\t\t\t" << "'spatialCorr" << it->first << "': {" << std::endl
-                                            << it->second
-                                            << "\t\t\t\t}," << std::endl;
-                                }
-                        // cluster size
-                         myfile << "\t\t\t\t" << "'clusterSize': {" << std::endl
-                                << wolffClusterSizeMeasurement
+                        // time
+                                << "\t\t\t\t" << "'usPerflip': {" << std::endl
+                                << wolffTimeMeasurement
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}," << std::endl
                     // single spin flip
                             << "\t\t\t" << "'single': {" << std::endl
-                        // magnetization
-                                << "\t\t\t\t" << "'magnetization': {" << std::endl
-                                << singleMagnetizationMeasurement
-                                << "\t\t\t\t}," << std::endl
-                        // squared magnetization
-                                << "\t\t\t\t" << "'magnetizationSquared': {" << std::endl
-                                << singleMagnetizationSquaredMeasurement
-                                << "\t\t\t\t}," << std::endl
-                        // energy
-                                << "\t\t\t\t" << "'energy': {" << std::endl
-                                << singleEnergyMeasurement
-                                << "\t\t\t\t}," << std::endl;
-                         // spatial correlations
-                                for (it=singleSpatialCorrelations.begin(); it!=singleSpatialCorrelations.end(); ++it) {
-                                    myfile  << "\t\t\t\t" << "'spatialCorr" << it->first << "': {" << std::endl
-                                            << it->second
-                                            << "\t\t\t\t}," << std::endl;
-                                }
-                        // acceptanceRate
-                         myfile << "\t\t\t\t" << "'acceptanceRate': {" << std::endl
-                                << singleAcceptanceRateMeasurement
-                                << "\t\t\t\t}," << std::endl
-                                << "\t\t\t\t" << "'noAcceptedFlips': {" << std::endl
-                                << singleAcceptedMeasurement
+                        // time
+                                << "\t\t\t\t" << "'usPerflip': {" << std::endl
+                                << singleTimeMeasurement
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}" << std::endl
                     // end
@@ -524,15 +357,9 @@ void measure() {
                 }
 
                 // clear the measurements
-                wolffMagnetizationMeasurement.clear();
-                wolffMagnetizationSquaredMeasurement.clear();
-                wolffEnergyMeasurement.clear();
-                wolffClusterSizeMeasurement.clear();
+                wolffTimeMeasurement.clear();
 
-                singleMagnetizationMeasurement.clear();
-                singleMagnetizationSquaredMeasurement.clear();
-                singleEnergyMeasurement.clear();
-                singleAcceptanceRateMeasurement.clear();
+                singleTimeMeasurement.clear();
             } // system size loop
         } // temperature loop
     } // omp parallel
