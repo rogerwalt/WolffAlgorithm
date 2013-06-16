@@ -1,7 +1,7 @@
 import pylab as pl
 import re
 
-import data_wolff_single_different_systemSizes_fa725ee642244f97aa049a8b7be3a6ed750149c7 as data
+import data
 
 xlbl='T'
 maxBinSingle = len(data.data[1]['results']['single']['energy']['stderr']) - 1

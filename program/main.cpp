@@ -157,7 +157,7 @@ class IsingLattice {
             // field energy
             energy += -H_*localSpin;
 
-            return energy/2.0;
+            return energy;
         }
 
         double computeEnergy() {
@@ -341,12 +341,12 @@ class IsingLattice {
 };
 
 void measure() {
-    unsigned int numWolffMeasurementValues = 1e3;
-    unsigned int numSingleMeasurementValues = 1e5;
+    unsigned int numWolffMeasurementValues = 1e4;
+    unsigned int numSingleMeasurementValues = 5e5;
     
-    const double startingTemperature = 1;
-    const double temperatureStep = 0.05;
-    const double endTemperature = 5;
+    const double startingTemperature = 0;
+    const double temperatureStep = 0.1;
+    const double endTemperature = 6;
     
     const double startingSystemSize = 5;
     const double systemSizeStep = 5;
