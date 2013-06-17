@@ -309,8 +309,8 @@ void measure() {
                 }
                 auto end = std::chrono::steady_clock::now();
 
-                int us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();
-                double timePerWolff = us/double(clusterSum)/double(numWolffMeasurementValues);
+                int ns = std::chrono::duration_cast<std::chrono::nanoseconds> (end-start).count();
+                double timePerWolff = ns/double(clusterSum)/double(numWolffMeasurementValues);
 
                 #pragma omp critical
                 { std::cerr << "[" << omp_get_thread_num() << "] wolff done" << std::endl; }
@@ -322,8 +322,8 @@ void measure() {
                 }
                 end = std::chrono::steady_clock::now();
 
-                us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();         
-                double timePerSingle = us/numSingleMeasurementValues;
+                ns = std::chrono::duration_cast<std::chrono::nanoseconds> (end-start).count();         
+                double timePerSingle = ns/numSingleMeasurementValues;
 
                 // output measurement data
                 // write data
@@ -338,16 +338,12 @@ void measure() {
                     // wolff
                             << "\t\t\t" << "'wolff': {" << std::endl
                         // time
-                                << "\t\t\t\t" << "'usPerflip': {" << std::endl
-                                << timePerWolff
-                                << "\t\t\t\t}," << std::endl
+                                << "\t\t\t\t" << "'nsPerflip': " << timePerWolff << "," << std::endl
                             << "\t\t\t" << "}," << std::endl
                     // single spin flip
                             << "\t\t\t" << "'single': {" << std::endl
                         // time
-                                << "\t\t\t\t" << "'usPerflip': {" << std::endl
-                                << timePerSingle
-                                << "\t\t\t\t}," << std::endl
+                                << "\t\t\t\t" << "'nsPerflip': " << timePerSingle << "," << std::endl
                             << "\t\t\t" << "}" << std::endl
                     // end
                             << "\t\t}" << std::endl
