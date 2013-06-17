@@ -290,12 +290,6 @@ void measure() {
     #pragma omp parallel
     { // omp parallel
         // initialize measurement containers
-            // wolff
-            myMeasurement<double> wolffTimeMeasurement;
-            
-            // single spinflip
-            myMeasurement<double> singleTimeMeasurement;
-
         #pragma omp for schedule(dynamic)
         for (int i=0;i<numberOfTemperatureLoops;++i) { // temperature loop
             for (int j=0;j<numberOfSystemSizeLoops;++j) { // system size loop
@@ -307,25 +301,29 @@ void measure() {
                     IsingLattice singleLattice(1, startingSystemSize+j*systemSizeStep);
 
                 // evolve in time and measure!
+                auto start = std::chrono::steady_clock::now();
+                unsigned int clusterSum = 0;
                 for (unsigned k=0; k<numWolffMeasurementValues; ++k) {
-                    auto start = std::chrono::steady_clock::now();
-                    unsigned int clusterSize = wolffLattice.doWolffStep();
-                    auto end = std::chrono::steady_clock::now();
-
-                    int us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();
-                    wolffTimeMeasurement.add_plain(us/clusterSize);
+                    clusterSum += wolffLattice.doWolffStep();
+                    
                 }
+                auto end = std::chrono::steady_clock::now();
+
+                int us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();
+                double timePerWolff = us/double(clusterSum)/double(numWolffMeasurementValues);
 
                 #pragma omp critical
                 { std::cerr << "[" << omp_get_thread_num() << "] wolff done" << std::endl; }
 
+                
+                start = std::chrono::steady_clock::now();
                 for (unsigned k=0; k<numSingleMeasurementValues; ++k) {
-                    auto start = std::chrono::steady_clock::now();
                     singleLattice.timeStep();
-                    auto end = std::chrono::steady_clock::now();
-
-                    int us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();                    singleTimeMeasurement.add_plain(us);
                 }
+                end = std::chrono::steady_clock::now();
+
+                us = std::chrono::duration_cast<std::chrono::microseconds> (end-start).count();         
+                double timePerSingle = us/numSingleMeasurementValues;
 
                 // output measurement data
                 // write data
@@ -341,25 +339,20 @@ void measure() {
                             << "\t\t\t" << "'wolff': {" << std::endl
                         // time
                                 << "\t\t\t\t" << "'usPerflip': {" << std::endl
-                                << wolffTimeMeasurement
+                                << timePerWolff
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}," << std::endl
                     // single spin flip
                             << "\t\t\t" << "'single': {" << std::endl
                         // time
                                 << "\t\t\t\t" << "'usPerflip': {" << std::endl
-                                << singleTimeMeasurement
+                                << timePerSingle
                                 << "\t\t\t\t}," << std::endl
                             << "\t\t\t" << "}" << std::endl
                     // end
                             << "\t\t}" << std::endl
                             << "\t}," << std::endl;
                 }
-
-                // clear the measurements
-                wolffTimeMeasurement.clear();
-
-                singleTimeMeasurement.clear();
             } // system size loop
         } // temperature loop
     } // omp parallel
