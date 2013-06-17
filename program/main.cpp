@@ -193,7 +193,7 @@ class IsingLattice {
             for (unsigned int x=0; x<latticeLength_; ++x) {
                 for (unsigned int y=0; y<latticeLength_; ++y) {
                     for (unsigned int z=0; z<latticeLength_; ++z) {
-                         ret += getSpin(x, y, z)*getSpin(x+dx, y+dy, z+dz);
+                         ret += getSpin(x, y, z)*getSpin((x+dx)%latticeLength_, (y+dy)%latticeLength_, (z+dz)%latticeLength_);
                     }
                 }
             }
