@@ -1,4 +1,4 @@
-\documentclass[handout]{beamer}
+\documentclass[]{beamer}
 \usetheme{default}
 
 \usepackage{graphicx} % \includegraphics
@@ -166,6 +166,23 @@ Well, life is not so easy. This result is in fact not the truth. Let me show you
 	\column{.5\textwidth}
 		\includegraphics[width=\textwidth]{img/single_noAcceptedFlips.png}
 \end{columns}
+\note[item]<3> {\[ \frac{N}{a(T)} = \text{\# trials} \]}
+\note[item]<3> {We want to change flip the magnetization of the system completely at least 100 times to have good statistics. For uncorrelated measurements we then have an error of 10\%.}
+\end{frame}
+
+\begin{frame}{Autocorrelation time}
+\note[item]<1> {There is another approach to describe what's going on. Not accepting a spinflip or only flipping one spin at a time means that the new configuration is highly correlated to the old one.}
+\pause
+\[ \phi_{A}(t) = \frac{\left< A(t_0)A(t) \right> - \left< A \right>^2}{\left< A(t_0)^2 \right> - \left< A \right>^2} \]
+\note[item]<2> {We define the linear autocorrelation function of a measurement value as a ratio of the covariance of two observables at a given point in time and at time \(t_0\).}
+\note{Definition and plots from measurements, magnetization and energy.}
+\end{frame}
+
+\begin{frame}{Binning analysis}
+\end{frame}
+
+\begin{frame}{What really happens in the system}
+\note{Draw domains on board and show single spin flip only is useful at borders of domains.}
 \end{frame}
 
 \begin{frame}{Why cluster algorithms are better}
