@@ -175,10 +175,35 @@ Well, life is not so easy. This result is in fact not the truth. Let me show you
 \pause
 \[ \phi_{A}(t) = \frac{\left< A(t_0)A(t) \right> - \left< A \right>^2}{\left< A(t_0)^2 \right> - \left< A \right>^2} \]
 \note[item]<2> {We define the linear autocorrelation function of a measurement value as a ratio of the covariance of two observables at a given point in time and at time \(t_0\).}
+\begin{columns}[c]
+	\column{.5\textwidth}
+	\pause
+	\includegraphics[width=\textwidth]{../results/measurements/autocorr_energy.png}
+	\column{.5\textwidth}
+	\pause
+	\includegraphics[width=\textwidth]{../results/measurements/autocorr_magnetization.png}
+\end{columns}
 \note{Definition and plots from measurements, magnetization and energy.}
 \end{frame}
 
-\begin{frame}{Binning analysis}
+\begin{frame}{Binning analysis I}
+\[ \text{Var} X := E \left[ X^2 \right] - E \left[ X \right]^2 \]
+\begin{align*}
+(\Delta X)^2 &= \frac{1}{N^2} \sum\limits_{i,j=1}^N \left( E \left[ X_i X_j \right] - E \left[ X \right]^2 \right) \\
+&= \frac{\text{Var}X}{N}+\frac{1}{N^2}\sum\limits_{i\neq j} \left( E \left[X_i X_j \right] - E \left[ X \right]^2 \right) \\
+&= \frac{\text{Var}X}{N}+\frac{2}{N^2}\sum\limits_{i=1}^N \sum\limits_t \left( E\left[X_i X_{i+t} \right] - E \left[ X \right]^2 \right) \\
+&:= \frac{\text{Var}X}{N}\left(1+2\tau_X\right)
+\end{align*}
+\note{For uncorrelated samples we know: \[ E\left[X_i X_j \right] = E\left[X_i\right] E\left[X_j\right] \text{ for } i \neq j \]
+The correlation time of a variable is defined as:
+\[ \tau_X := \frac{\sum\limits_t \left( E\left[ X_i X_{i+t} \right]-E \left [X \right] ^2 \right)}{\text{Var}X} \]}
+\end{frame}
+
+\begin{frame}{Binning analysis II}
+\[ A_i^{(l)} = \frac{1}{2} \left( A_{2i-1}^{(l-1)} + A_{2i}^{(l-1)} \right) \]
+\[ \Delta^{(l)} = \sqrt{\text{Var}A^{(l)}/M^{(l)}}  \stackrel{l \rightarrow \infty}{\rightarrow} \Delta = \sqrt{(1+2\tau_A)\text{Var}A/M} \]
+\[ \tau_A = \lim_{l\rightarrow\infty}\left( \frac{2^l \text{Var} A^{(l)}}{\text{Var} A^{(0)}} - 1 \right) \]
+\note{Draw graphics with the bins and the levels.}
 \end{frame}
 
 \begin{frame}{What really happens in the system}
