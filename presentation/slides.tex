@@ -5,8 +5,12 @@
 \usepackage{mathrsfs} % \mathscr
 
 \setbeamertemplate{note page}{
-\tiny \centering{ \insertslideintonotes{0.5}} \\
-\insertnote
+	\tiny
+	\begin{center}
+		\insertslideintonotes{0.5}
+	\end{center}
+	\hrule
+	\insertnote
 }
 
 % to print with notes
