@@ -139,7 +139,7 @@ def plotClusterSizeRelative():
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
 
     for systemSize in sorted(list(set([a for (a,x,y,z) in pltdataSingle]))):
-        pl.errorbar([x for (a,x,y,z) in pltdataSingle if a==systemSize],[y/(a**3) for (a,x,y,z) in pltdataSingle if a==systemSize],[z/(a**3) for (a,x,y,z) in pltdataSingle if a==systemSize], label=systemSize)
+        pl.errorbar([x for (a,x,y,z) in pltdataSingle if a==systemSize],[float(y)/(a**3) for (a,x,y,z) in pltdataSingle if a==systemSize],[float(z)/(a**3) for (a,x,y,z) in pltdataSingle if a==systemSize], label=systemSize)
 
     fig = pl.gcf()
     fig.suptitle(title,fontsize=14)
