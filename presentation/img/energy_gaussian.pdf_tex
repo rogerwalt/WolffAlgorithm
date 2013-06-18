@@ -50,7 +50,7 @@
   \makeatother%
   \begin{picture}(1,0.85583183)%
     \put(0,0){\includegraphics[width=\unitlength]{img/energy_gaussian.pdf}}%
-    \put(0.85428755,0.40785101){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\(\alpha\sqrt{L^d}\)}}}%
+    \put(0.85428755,0.40785101){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\(\alpha\sqrt{N}\)}}}%
     \put(-0.0024198,0.79528982){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{E}}}%
   \end{picture}%
 \endgroup%

@@ -5,7 +5,7 @@
 \usepackage{mathrsfs} % \mathscr
 
 % to print with notes
-\setbeameroption{show notes}
+%\setbeameroption{show notes}
 
 % no decoration to notes
 %\setbeamertemplate{note page}[plain]
@@ -40,19 +40,29 @@
 	\Large{Monte Carlo methods which overcome the problem of critical slowing down close to second order phase transitions}
 \end{frame}
 
-\begin{frame}{Ising model - Why?}
+\begin{frame}{Contents}
+\begin{itemize}
+\item Ising model
+\item Single spin flip metropolis
+\item Autocorrelation, Binning Analysis
+\item Wolff algorithm
+\item Swensen-Wang algorithm
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Ising model}
 \begin{columns}[c]
 	\column{.5\textwidth}
 	\begin{itemize}
-		\item<1-> Phase transitions
+		\item<2-> Phase transitions
 			\note[item]<1> {Phase transitions are important}
-		\item<2-> One of the simplest statistical models that show a phase transition
+		\item<3-> One of the simplest statistical models that show a phase transition
 			\note[item]<2> {The Ising model is one of the simplest statistical models that shows a phase transition.}
-		\item<3-> Magnetic systems, opinion models, binary mixtures
+		\item<4-> Magnetic systems, opinion models, binary mixtures
 			\note[item]<3> {Ising model can be used to simulate magnetic systems (ferromagnetic and antiferromagnetic), opinion models and binary mixtures.}
 	\end{itemize}
 	\column{.5\textwidth}
-	\pause[4]
+	\pause[5]
 	\begin{figure}[p]
 		\centering
 		\includegraphics{img/ising.jpg}
@@ -71,18 +81,20 @@
 	\note[item]<1> {Lattice with \(N\) sites.}
 \item<2-> Discrete integer spins \( \sigma_i = \pm 1 \) on each lattice site
 \end{itemize}
-\pause
+\pause[3]
 \[ \mathscr{H}(\sigma) = -J \sum\limits_{\left< i, j \right>} \sigma_i \sigma_j - H \sum\limits_i \sigma_i \]
 	\note[item]<4> {Sum over nearest neighbours.}
 	\note[item]<4> {\( J \): interaction, \( H \): external field}
 	\note[item]<4> {\( J_{ij} \) in general case, \( J>0 \): ferromagnetic, \( J<0 \): antiferromagnetic}
-\pause
+
 \begin{columns}[c]
 	\column{.5\textwidth}
+	\pause
 	\def\svgwidth{.5\textwidth}
 	\centering
 	\input{img/spins_parallel.pdf_tex}
 	\column{.5\textwidth}
+	\pause
 	\def\svgwidth{.5\textwidth}
 	\centering
 	\input{img/spins_antiparallel.pdf_tex}
@@ -100,36 +112,38 @@
 	\note[item]<3> {Measurement value of a function, e.g. magnetization, is given by the sum over all states of the measurement value at the configuration times the configuration probability.}
 \end{frame}
 
-\begin{frame}{Ising model - Monte Carlo I}
+\begin{frame}{Ising model - Monte Carlo}
 \begin{itemize}
 \item<2-> We can't compute all configurations (\(2^N\))
 	\note[item]<2> {Why not? \( \rightarrow 2^N = 2^{L^d} \) e.g. \( L = systemSize = 15 \) in 2 dimensions: \(2^{15^2} = 2^{225} = 5 \cdot 10^{67}\)}
 	\note[item]<2> {We can't compute the exact expectation value of an observable. But that's what we're interested in.}
 \item<3-> We can't sample uniformely distributed over energy \def\svgwidth{12em} \input{img/energy_gaussian.pdf_tex}
 	\note[item]<3> {Because the distribution of the average energy gets sharper with increasing size \(\left(\alpha \ \sqrt{L^d}\right)\).}
-\item<4-> Solution: Importance sampling using Metropolis algorithm.
+\item<4-> Solution: Importance sampling using Metropolis algorithm
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Single spin flip metropolis - Algorithm}
-\pause
+
 \begin{align*}
-A(X \rightarrow Y) &= \min \left( 1, \frac{p(Y)}{p(X)} \right) \\ 
-&= \min \left( 1, e^{- \beta \left[ E(Y)-E(X) \right] } \right)
+\visible<4->{A(X \rightarrow Y) &= \min \left( 1, \frac{p(Y)}{p(X)} \right) \\}
+\visible<5-> {
+&= \min \left( 1, e^{- \beta \left[ E(Y)-E(X) \right] } \right)}
 \end{align*}
+
 \note {If energy decreases, always accept. If energy increases, accept with probability \( e^{- \beta \Delta E} \).}
 \begin{enumerate}
-\item Choose one site (uniformly randomly)
+\item<2-> Choose one site (uniformly randomly)
 	\note[item] {New state given by spinflip at this site.}
-\item Calculate energy difference
-\item Accept new configuration with transition probability above
+\item<3-> Generate new trial configuration Y by flipping spin
+\item<4-> Accept new configuration with transition probability above
 \end{enumerate}
 \note{Blazingly fast (Troells: 2 flips/ns?), easy to implement.}
 \end{frame}
 
 \begin{frame}{Single spin flip metropolis - Results}
 \pause
-Magnetization \( M(T) = \left< \frac{1}{N} \sum\limits_{i=1}^N \sigma_i \right> \)
+Magnetization \( M(T) = \left< \frac{1}{N} \sum\limits_{i=1}^N \sigma_i \right>_T \)
 \begin{columns}[c]
 	\column{.5\textwidth}
 	\pause
@@ -153,19 +167,15 @@ Well, life is not so easy. This result is in fact not the truth. Let me show you
 
 \begin{frame}{Single spin flip metropolis - To flip or not to flip}
 \pause
-\[ \mathscr{H}(\sigma) = -J \sum\limits_{i, j} \sigma_i \sigma_j \]
+\[ \mathscr{H}(\sigma) = -J \sum\limits_{\left< i, j \right>} \sigma_i \sigma_j \]
 \note[item]<1> {Now that we know that the magnetization should vanish, let's explore why it hasn't done so.}
 \note[item]<2> {The hamiltonian of the system states clearly that the spins like to be aligned. They were all +1 at the beginning, and then thermalized (brought to thermodynamic equilibrium) in 3 sweeps (abbrevation for: 3 times number of sites spinflips).}
 \note[item]<2> {The point is that the spins can also be aligned when they are all -1. But we didn't see that happen. Why?}
 \note[item]<2> {I took 0.5 million measurement values, after every single spin flip. This means that the spin on every site could have flipped around 150 times. But it didn't. This is why:}
 \pause
-\begin{columns}[c]
-	\column{.5\textwidth}
-		\includegraphics[width=\textwidth]{img/single_acceptanceRate.png}
-		\note[item]<3> {What we see here is the acceptance rate of a spin flip. It is one if the suggested new configuration through the single spin flip was accepted. Well, it's actually almost zero for low temperatures. So we move ultra slow through phase space, which is no fun, because we want to do an ergodic sampling.}
-	\column{.5\textwidth}
-		\includegraphics[width=\textwidth]{img/single_noAcceptedFlips.png}
-\end{columns}
+\centering
+\includegraphics[height=12em]{img/single_acceptanceRate.png}
+	\note[item]<3> {What we see here is the acceptance rate of a spin flip. It is one if the suggested new configuration through the single spin flip was accepted. Well, it's actually almost zero for low temperatures. So we move ultra slow through phase space, which is no fun, because we want to do an ergodic sampling.}
 \note[item]<3> {\[ \frac{N}{a(T)} = \text{\# trials} \]}
 \note[item]<3> {We want to change flip the magnetization of the system completely at least 100 times to have good statistics. For uncorrelated measurements we then have an error of 10\%.}
 \end{frame}
@@ -228,6 +238,7 @@ The correlation time of a variable is defined as:
 \end{frame}
 
 \begin{frame}{Energy}
+\includegraphics[width=\textwidth]{../results/measurements/energy.png}
 \end{frame}
 
 \begin{frame}{Cluster size}
