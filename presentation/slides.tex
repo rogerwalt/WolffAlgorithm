@@ -183,36 +183,36 @@ Well, life is not so easy. This result is in fact not the truth. Let me show you
 \begin{frame}{Autocorrelation time}
 \note[item]<1> {There is another approach to describe what's going on. Not accepting a spinflip or only flipping one spin at a time means that the new configuration is highly correlated to the old one.}
 \pause
-\[ \phi_{A}(t) = \frac{\left< A(t_0)A(t) \right> - \left< A \right>^2}{\left< A(t_0)^2 \right> - \left< A \right>^2} \]
+\[ \phi_{A}(t) = \frac{\left< A(t_0)A(t) \right> - \left< A \right>^2}{\left< A(t_0)^2 \right> - \left< A \right>^2} \visible<3->{\propto e^{-\frac{t}{\tau_A}}} \]
 \note[item]<2> {We define the linear autocorrelation function of a measurement value as a ratio of the covariance of two observables at a given point in time and at time \(t_0\).}
 \begin{columns}[c]
 	\column{.5\textwidth}
-	\pause
-	\includegraphics[width=\textwidth]{../results/measurements/autocorr_energy.png}
+	\pause[4]
+	\includegraphics[width=\textwidth]{../results/measurements/autocorr_energy_single.png}
 	\column{.5\textwidth}
-	\pause
-	\includegraphics[width=\textwidth]{../results/measurements/autocorr_magnetization.png}
+	\pause[5]
+	\includegraphics[width=\textwidth]{../results/measurements/autocorr_magnetization_single.png}
 \end{columns}
 \note[item]<3> {We see that the energy converges much faster than the magnetization. I read that people often focus on the energy, but here you really have to focues on the magnetization to be sure.}
 \note{Definition and plots from measurements, magnetization and energy.}
 \end{frame}
 
 \begin{frame}{Binning analysis I}
+\pause
 \[ \text{Var} X := E \left[ X^2 \right] - E \left[ X \right]^2 \]
-\begin{align*}
-(\Delta X)^2 &= \frac{1}{N^2} \sum\limits_{i,j=1}^N \left( E \left[ X_i X_j \right] - E \left[ X \right]^2 \right) \\
-&= \frac{\text{Var}X}{N}+\frac{1}{N^2}\sum\limits_{i\neq j} \left( E \left[X_i X_j \right] - E \left[ X \right]^2 \right) \\
-&= \frac{\text{Var}X}{N}+\frac{2}{N^2}\sum\limits_{i=1}^N \sum\limits_t \left( E\left[X_i X_{i+t} \right] - E \left[ X \right]^2 \right) \\
-&:= \frac{\text{Var}X}{N}\left(1+2\tau_X\right)
-\end{align*}
+\pause
+\[ (\Delta X)^2 = \frac{\text{Var}X}{N}\left(1+2\tau_X\right) \]
 \note{For uncorrelated samples we know: \[ E\left[X_i X_j \right] = E\left[X_i\right] E\left[X_j\right] \text{ for } i \neq j \]
 The correlation time of a variable is defined as:
 \[ \tau_X := \frac{\sum\limits_t \left( E\left[ X_i X_{i+t} \right]-E \left [X \right] ^2 \right)}{\text{Var}X} \]}
 \end{frame}
 
 \begin{frame}{Binning analysis II}
+\pause
 \[ A_i^{(l)} = \frac{1}{2} \left( A_{2i-1}^{(l-1)} + A_{2i}^{(l-1)} \right) \]
+\pause
 \[ \Delta^{(l)} = \sqrt{\text{Var}A^{(l)}/M^{(l)}}  \stackrel{l \rightarrow \infty}{\rightarrow} \Delta = \sqrt{(1+2\tau_A)\text{Var}A/M} \]
+\pause
 \[ \tau_A = \lim_{l\rightarrow\infty}\left( \frac{2^l \text{Var} A^{(l)}}{\text{Var} A^{(0)}} - 1 \right) \]
 \note{Draw graphics with the bins and the levels.}
 \end{frame}
@@ -260,6 +260,19 @@ The correlation time of a variable is defined as:
 
 \begin{frame}
 \centerline{\huge{Questions}}
+\end{frame}
+
+\begin{frame}{Binning analysis in detail}
+\[ \text{Var} X := E \left[ X^2 \right] - E \left[ X \right]^2 \]
+\begin{align*}
+(\Delta X)^2 &= \frac{1}{N^2} \sum\limits_{i,j=1}^N \left( E \left[ X_i X_j \right] - E \left[ X \right]^2 \right) \\
+&= \frac{\text{Var}X}{N}+\frac{1}{N^2}\sum\limits_{i\neq j} \left( E \left[X_i X_j \right] - E \left[ X \right]^2 \right) \\
+&= \frac{\text{Var}X}{N}+\frac{2}{N^2}\sum\limits_{i=1}^N \sum\limits_t \left( E\left[X_i X_{i+t} \right] - E \left[ X \right]^2 \right) \\
+&:= \frac{\text{Var}X}{N}\left(1+2\tau_X\right)
+\end{align*}
+\note{For uncorrelated samples we know: \[ E\left[X_i X_j \right] = E\left[X_i\right] E\left[X_j\right] \text{ for } i \neq j \]
+The correlation time of a variable is defined as:
+\[ \tau_X := \frac{\sum\limits_t \left( E\left[ X_i X_{i+t} \right]-E \left [X \right] ^2 \right)}{\text{Var}X} \]}
 \end{frame}
 
 \begin{frame}{Wolff or Swendsen-Wang?}
