@@ -222,7 +222,9 @@ The correlation time of a variable is defined as:
 \end{frame}
 
 \begin{frame}{Cluster algorithms: Wolff algorithm}
-\[ P(\sigma_x, \sigma_y) = 1 - \min \left( 1,e^{2\beta \sigma_x \sigma_y} \right) \]
+\visible<4->{
+\[ P(\sigma_x, \sigma_y) = 1 - \min \left( 1,e^{-2\beta \sigma_x \sigma_y} \right) \]
+}
 \begin{enumerate}
 \item<2-> Choose one site (uniformly randomly)
 \item<3-> Flip its spin and add it to the cluster
@@ -242,19 +244,35 @@ The correlation time of a variable is defined as:
 \end{frame}
 
 \begin{frame}{Cluster size}
+\begin{columns}[c]
+	\pause
+	\column{.5\textwidth}
+	\includegraphics[width=\textwidth]{../results/measurements/clusterSize.png}
+	\pause
+	\column{.5\textwidth}
+	\includegraphics[width=\textwidth]{../results/measurements/clusterSizeRelative.png}
+\end{columns}
 \end{frame}
 
 \begin{frame}{Magnetization}
+\includegraphics[width=\textwidth]{../results/measurements/magnetization.png}
 \end{frame}
 
 \begin{frame}{Magnetization squared}
 \note{Magnetization itself is a bad order parameter, since it can have two signs so it cancels. Magnetization squared is a good order parameter, because it consists of sums of spatial spin correlations. It shows the phase transition.}
+\includegraphics[width=\textwidth]{../results/measurements/magnetizationSquared.png}
 \end{frame}
 
 \begin{frame}{Computation time per spin flip}
 \end{frame}
 
 \begin{frame}{Swendsen-Wang}
+Similar to Wolff, but:
+\begin{itemize}
+\item<2-> Partitions the whole lattice in clusters
+\item<3-> Randomly chooses a new (same) spin for every cluster
+\item<4-> Always touches every spin
+\end{itemize}
 \end{frame}
 
 
