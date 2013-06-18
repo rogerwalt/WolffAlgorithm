@@ -149,7 +149,7 @@ def plotClusterSizeRelative():
 
  
 def plotComparisonAutoCorrelation(measure):
-    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single'][measure]['autocorr'][maxBinWolff]) for x in range(len(data.data))]
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['single'][measure]['autocorr'][maxBinSingle]) for x in range(len(data.data))]
     pltdataSingle.sort(key=lambda x: (x[0], x[1]))
 
     pltdataWolff = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results']['wolff'][measure]['autocorr'][maxBinWolff]) for x in range(len(data.data))]
@@ -172,6 +172,27 @@ def plotComparisonAutoCorrelation(measure):
     fig.suptitle('Autocorrelation: '+title, fontsize=14)
     ax1.legend(bbox_to_anchor=(1.01, 0), loc='lower left', borderaxespad=0.)
     pl.show()
+    
+def plotAutoCorrelationForOneSystem(system, measure):
+    maxBin = 0
+    if system == 'single':
+        maxbin = maxBinSingle
+    else:
+        maxbin = maxBinWolff
+        
+    pltdataSingle = [(data.data[x]['systemSize'], data.data[x]['temperature'], data.data[x]['results'][system][measure]['autocorr'][maxbin]) for x in range(len(data.data))]
+    pltdataSingle.sort(key=lambda x: (x[0], x[1]))
+    
+    for systemSize in sorted(list(set([a for (a,x,y) in pltdataSingle]))):
+                pl.plot([x for (a,x,y) in pltdataSingle if a==systemSize],[y for (a,x,y) in pltdataSingle if a==systemSize], label=systemSize)
+    
+    fig = pl.gcf()
+    fig.suptitle(title,fontsize=14) 
+    pl.xlabel(xlbl)
+    pl.legend(loc='upper left')
+    pl.show()
+    
+    
 
 # plot spatial spin correlations
 title='Spatial spin correlation at T=2'
@@ -182,11 +203,14 @@ title='Magnetization'
 plotForOneSystemSize('single', 15, 'magnetization')
 
 # plot autocorrelations
-title='Energy'
-plotComparisonAutoCorrelation('energy')
+title='Autocorrelation: Energy'
+plotAutoCorrelationForOneSystem('single','energy')
 
-title='Magnetization'
-plotComparisonAutoCorrelation('magnetization')
+title='Autocorrelation: Magnetization'
+plotAutoCorrelationForOneSystem('single','magnetization')
+
+title='Autocorrelation: Energy'
+plotComparisonAutoCorrelation('energy')
 
 # plot energy
 title='Energy'
