@@ -1,4 +1,4 @@
-\documentclass[handout]{beamer}
+\documentclass[]{beamer}
 \usetheme{default}
 
 \usepackage{graphicx} % \includegraphics
@@ -14,7 +14,7 @@
 }
 
 % to print with notes
-\setbeameroption{show notes}
+%\setbeameroption{show notes}
 %\setbeameroption{show only notes}
 
 % no decoration to notes
@@ -242,7 +242,7 @@ Well, life is not so easy. This result is in fact not the truth. Let me show you
 
 \begin{frame}{Cluster algorithms: Wolff algorithm}
 \visible<4->{
-\[ P(\sigma_x, \sigma_y) = 1 - \min \left( 1,e^{-2\beta \sigma_x \sigma_y} \right) \]
+\[ P(\sigma_x, \sigma_y) = 1 - \min \left( 1,e^{2\beta \sigma_x \sigma_y} \right) \]
 }
 \begin{enumerate}
 \item<2-> Choose one site (uniformly randomly)
@@ -303,10 +303,20 @@ Similar to Wolff, but:
 \end{frame}
 
 \begin{frame}{Summary}
+\begin{itemize}
+\item<2-> Critical slowing down for single spin flip metropolis
+\item<3-> Solved by touching whole clusters
+\item<4-> Wolff
+\item<5-> Swendsen-Wang
+\end{itemize}
 \note{ }
 \end{frame}
 
 \begin{frame}{References}
+\begin{itemize}
+\item R.H. Swendsen and J-S. Wang, Phys. Rev. Lett. 58, 86 (1987)
+\item U. Wolff, Phys. Rev. Lett. 62, 361 (1989)
+\end{itemize}
 \note{ }
 \end{frame}
 
