@@ -1,4 +1,4 @@
-\documentclass[handout]{beamer}
+\documentclass[]{beamer}
 \usetheme{default}
 
 \usepackage{graphicx} % \includegraphics
@@ -15,7 +15,7 @@
 
 % to print with notes
 %\setbeameroption{show notes}
-\setbeameroption{show only notes}
+%\setbeameroption{show only notes}
 
 % no decoration to notes
 %\setbeamertemplate{note page}[plain]
@@ -95,9 +95,15 @@
 \end{itemize}
 \pause[3]
 \[ \mathscr{H}(\sigma) = -J \sum\limits_{\left< i, j \right>} \sigma_i \sigma_j - H \sum\limits_i \sigma_i \]
-	\note[item]<4> {Sum over nearest neighbours.}
-	\note[item]<4> {\( J \): interaction, \( H \): external field}
-	\note[item]<4> {\( J_{ij} \) in general case, \( J>0 \): ferromagnetic, \( J<0 \): antiferromagnetic}
+	\note[item] {Lattice of arbitrary geometry}
+	\note[item] {Place a spin \( \sigma_i = \pm 1 \) on each lattice site}
+	\note[item] {Hamiltonian:}
+	\note[item] {Sum over nearest neighbours.}
+	\note[item] {\( J \): interaction, \( H \): external field}
+	\note[item] {Two aligned spins give a contribution of -J}
+	\note[item] {Two antialligned spins give a contribution of J}
+	\note[item] {\( J_{ij} \) in general case, \( J>0 \): ferromagnetic, \( J<0 \): antiferromagnetic}
+	\note[item] {For J>0, spins like to be aligned!}
 
 \begin{columns}[c]
 	\column{.5\textwidth}
@@ -214,17 +220,18 @@ Well, life is not so easy. This result is in fact not the truth. Let me show you
 \[ \text{Var} X := E \left[ X^2 \right] - E \left[ X \right]^2 \]
 \pause
 \[ (\Delta X)^2 = \frac{\text{Var}X}{N}\left(1+2\tau_X\right) \]
-\note{For uncorrelated samples we know: \[ E\left[X_i X_j \right] = E\left[X_i\right] E\left[X_j\right] \text{ for } i \neq j \]
-The correlation time of a variable is defined as:
-\[ \tau_X := \frac{\sum\limits_t \left( E\left[ X_i X_{i+t} \right]-E \left [X \right] ^2 \right)}{\text{Var}X} \]}
+\pause
+\[ \tau_X := \frac{\sum\limits_{i=1}^N\sum\limits_t \left( E\left[ X_i X_{i+t} \right]-E \left [X \right] ^2 \right)}{\text{Var}X} \]
+	\note{For uncorrelated samples we know: \[ E\left[X_i X_j \right] = E\left[X_i\right] E\left[X_j\right] \text{ for } i \neq j \]
+}
 \end{frame}
 
 \begin{frame}{Binning analysis II}
 \pause
 \[ A_i^{(l)} = \frac{1}{2} \left( A_{2i-1}^{(l-1)} + A_{2i}^{(l-1)} \right) \]
 \pause
-\[ \Delta^{(l)} = \sqrt{\text{Var}A^{(l)}/M^{(l)}}  \stackrel{l \rightarrow \infty}{\rightarrow} \Delta = \sqrt{(1+2\tau_A)\text{Var}A/M} \]
-\pause
+\[ \Delta^{(l)} = \sqrt{\text{Var}A^{(l)}/M^{(l)}}  \; \visible<4->{\stackrel{l \rightarrow \infty}{\longrightarrow} \; \Delta = \sqrt{(1+2\tau_A)\text{Var}A/M}} \]
+\pause[5]
 \[ \tau_A = \lim_{l\rightarrow\infty}\left( \frac{2^l \text{Var} A^{(l)}}{\text{Var} A^{(0)}} - 1 \right) \]
 \note{Draw graphics with the bins and the levels.}
 \end{frame}
