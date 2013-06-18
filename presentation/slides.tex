@@ -1,11 +1,17 @@
-\documentclass[]{beamer}
+\documentclass[handout]{beamer}
 \usetheme{default}
 
 \usepackage{graphicx} % \includegraphics
 \usepackage{mathrsfs} % \mathscr
 
+\setbeamertemplate{note page}{
+\tiny \centering{ \insertslideintonotes{0.5}} \\
+\insertnote
+}
+
 % to print with notes
 %\setbeameroption{show notes}
+\setbeameroption{show only notes}
 
 % no decoration to notes
 %\setbeamertemplate{note page}[plain]
@@ -38,6 +44,7 @@
 	\vspace*{5pt}
 
 	\Large{Monte Carlo methods which overcome the problem of critical slowing down close to second order phase transitions}
+	\note{ }
 \end{frame}
 
 \begin{frame}{Contents}
@@ -46,8 +53,9 @@
 \item Single spin flip metropolis
 \item Autocorrelation, Binning Analysis
 \item Wolff algorithm
-\item Swensen-Wang algorithm
+\item Swendsen-Wang algorithm
 \end{itemize}
+\note{ }
 \end{frame}
 
 \begin{frame}{Ising model}
@@ -233,14 +241,17 @@ The correlation time of a variable is defined as:
 	\item Visit every unknown neighbour, flip its spin and add it to the cluster with probability given above
 	\end{enumerate}
 \end{enumerate}
+\note{ }
 \end{frame}
 
 \begin{frame}{Why cluster algorithms are better}
 \includegraphics[width=\textwidth]{img/comp_magnetization.png}
+\note{ }
 \end{frame}
 
 \begin{frame}{Energy}
 \includegraphics[width=\textwidth]{../results/measurements/energy.png}
+\note{ }
 \end{frame}
 
 \begin{frame}{Cluster size}
@@ -252,10 +263,12 @@ The correlation time of a variable is defined as:
 	\column{.5\textwidth}
 	\includegraphics[width=\textwidth]{../results/measurements/clusterSizeRelative.png}
 \end{columns}
+\note{ }
 \end{frame}
 
 \begin{frame}{Magnetization}
 \includegraphics[width=\textwidth]{../results/measurements/magnetization.png}
+\note{ }
 \end{frame}
 
 \begin{frame}{Magnetization squared}
@@ -265,6 +278,7 @@ The correlation time of a variable is defined as:
 
 \begin{frame}{Computation time per spin flip}
 \includegraphics[width=\textwidth]{../results/measurements/nsPerSpinFlip.png}
+\note{ }
 \end{frame}
 
 \begin{frame}{Swendsen-Wang}
@@ -274,11 +288,20 @@ Similar to Wolff, but:
 \item<3-> Randomly chooses a new (same) spin for every cluster
 \item<4-> Always touches every spin
 \end{itemize}
+\note{ }
 \end{frame}
 
+\begin{frame}{Summary}
+\note{ }
+\end{frame}
+
+\begin{frame}{References}
+\note{ }
+\end{frame}
 
 \begin{frame}
 \centerline{\huge{Questions}}
+\note{ }
 \end{frame}
 
 \begin{frame}{Binning analysis in detail}
@@ -296,6 +319,7 @@ The correlation time of a variable is defined as:
 
 \begin{frame}{Wolff or Swendsen-Wang?}
 Swendsen-Wang better for parallelization because it touches the whole lattice.
+\note{ }
 \end{frame}
 
 \end{document}
